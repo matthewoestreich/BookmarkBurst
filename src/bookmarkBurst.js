@@ -20,7 +20,6 @@ class BookmarkNode {
 
 // Page loaded...
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log("loaded")
 	const bookmarksTree = await api.bookmarks.getTree();
 	const root = bookmarksTree[0];
 	BOOKMARKS_TREE = generateSymbolicTree(root.children);
