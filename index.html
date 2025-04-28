@@ -1,62 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>BookmarkBurst</title>
-		<link href="public/css/bootstrap.min.css" rel="stylesheet" />
-		<link href="public/css/bootstrap-icons.min.css" rel="stylesheet" />
-		<link href="public/css/popup.css" rel="stylesheet" />
-	</head>
-	<body class="bg-light">
-		<!-- Modal to show selected bookmarks -->
-		<div class="modal modal-lg fade" id="modal-view-selected-bookmarks" tabindex="-1" aria-labelledby="label-modal-view-selected-bookmarks" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-scrollable">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h1 class="modal-title fs-5" id="label-modal-view-selected-bookmarks">Selected Bookmarks</h1>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body">
-						<ul id="list-modal-view-selected-bookmarks" class="list-group"></ul>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="container">
-			<!-- Horizontal Menu (Nav) -->
-			<ul class="nav nav-pills nav-tabs nav-fill m-4 d-flex flex-row flex-nowrap" role="tablist">
-				<li class="nav-item" role="presentation">
-					<button class="nav-link active" id="menu-tab-open-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">Open Multiple Bookmarks</button>
-				</li>
-				<li class="nav-item" role="presentation">
-					<button class="nav-link" id="menu-tab-organize-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-organize-bookmarks" role="tab">Organize Bookmarks</button>
-				</li>
-			</ul>
-			<!-- Content Panels -->
-			<div class="tab-content mt-3 text-center">
-				<div class="tab-pane active show" id="pane-open-bookmarks" role="tabpanel" tabindex="0">
-					<h3>Open Multiple Bookmarks</h3>
-					<p>Select which bookmarks you would like to open at once, then click "Open Selected Bookmarks"</p>
-					<div class="mb-3 d-flex flex-wrap gap-2 justify-content-center">
-						<button id="open-selected-bookmarks" class="btn btn-outline-primary btn-sm">Open Selected Bookmarks</button>
-						<button id="clear-all-selected" class="btn btn-outline-primary btn-sm">Clear Selected</button>
-						<button id="open-modal-view-selected-bookmarks" type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modal-view-selected-bookmarks">Review Selected Bookmarks</button>
-					</div>
-					<div class="bookmarks-list-container">
-						<ul id="bookmarks-list" class="list-group text-start"></ul>
-					</div>
-				</div>
-				<div class="tab-pane" id="pane-organize-bookmarks" role="tabpanel" tabindex="0">
-					<h3>Organize Bookmarks</h3>
-					<p>Coming soon!</p>
-				</div>
-			</div>
-		</div>
-		<script src="js/bootstrap.bundle.min.js"></script>
-		<script src="bookmarkBurst.js"></script>
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookmarkBurst</title>
+    <link href="public/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="public/css/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="public/css/popup.css" rel="stylesheet" />
+  </head>
+  <body class="bg-light">
+    <!-- Modal to show selected bookmarks -->
+    <div
+      class="modal modal-lg fade"
+      id="modal-view-selected-bookmarks"
+      tabindex="-1"
+      aria-labelledby="label-modal-view-selected-bookmarks"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="label-modal-view-selected-bookmarks">Selected Bookmarks</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <ul id="list-modal-view-selected-bookmarks" class="list-group"></ul>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <!-- Horizontal Menu (Nav) -->
+      <ul class="nav nav-pills nav-tabs nav-fill m-4 d-flex flex-row flex-nowrap" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="menu-tab-open-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">
+            Open Many
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="menu-tab-detect-duplicates" data-bs-toggle="tab" data-bs-target="#pane-detect-duplicates" role="tab">
+            Find Duplicates
+          </button>
+        </li>
+      </ul>
+      <!-- Content Panels -->
+      <div class="tab-content mt-3 text-center">
+        <div class="tab-pane active show" id="pane-open-bookmarks" role="tabpanel" tabindex="0">
+          <h3>Open Multiple Bookmarks</h3>
+          <p>Select which bookmarks you would like to open at once, then click "Open Selected"</p>
+          <div class="row">
+            <div class="col-sm-12 col-md-3 col-lg-2 mb-1 order-sm-last order-md-first">
+              <select id="sort-bookmarks" class="form-select form-select-sm">
+                <option value="Sort Bookmarks" selected disabled>Sort Bookmarks</option>
+                <option value="Folders First">Folders First</option>
+                <option value="Date Added">Date Added</option>
+                <option value="Alphabetical">Alphabetical</option>
+              </select>
+            </div>
+            <div class="col-sm-12 col-md-9 col-lg-10 mb-1 d-flex justify-content-md-end justify-content-evenly order-sm-first order-md-last">
+              <button id="clear-all-selected" class="btn btn-outline-primary btn-sm mx-1">Uncheck All</button>
+              <button
+                id="open-modal-view-selected-bookmarks"
+                type="button"
+                class="btn btn-outline-primary btn-sm mx-1"
+                data-bs-toggle="modal"
+                data-bs-target="#modal-view-selected-bookmarks"
+              >
+                Review Selected
+              </button>
+              <button id="open-selected-bookmarks" class="btn btn-primary btn-sm mx-1">Open Selected</button>
+            </div>
+          </div>
+          <div class="bookmarks-list-container">
+            <ul id="bookmarks-list" class="list-group text-start"></ul>
+          </div>
+        </div>
+        <div class="tab-pane" id="pane-detect-duplicates" role="tabpanel" tabindex="0">
+          <h3>Find Duplicate Bookmarks</h3>
+          <p>Find duplicate bookmarks by title or URL and optionally remove duplicates. <b>Note: we ignore duplicate folder names!</b></p>
+          <div class="row">
+            <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
+              <div class="input-group mb-3">
+                <select class="form-select" id="find-duplicates-by" aria-label="Example select with button addon">
+                  <option selected disabled>Find by...</option>
+                  <option value="url">URL</option>
+                  <option value="title">Title</option>
+                </select>
+                <button id="start-find-duplicates" class="btn btn-outline-primary" type="button">Find Duplicates</button>
+              </div>
+            </div>
+						<div id="duplicates-list" class="row">
+						</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="bookmarkBurst.js"></script>
+  </body>
 </html>
