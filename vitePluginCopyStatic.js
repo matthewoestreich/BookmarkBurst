@@ -25,6 +25,11 @@ export function copyStatic(options = { entities: [] }) {
     async generateBundle() {
       for (const { source, destination, fileName } of options.entities) {
         if (!fs.existsSync(source)) {
+          console.error(`[vite-plugin-copy-static] Source does not exist!`, { source });
+          return;
+        }
+        if (!fs.statSync(source).isFile()) {
+          console.error(`[vite-plugin-copy-static] Source is not a file!`, { source });
           return;
         }
 
@@ -34,7 +39,7 @@ export function copyStatic(options = { entities: [] }) {
         if (!fs.existsSync(destinationDirectory)) {
           fs.mkdirSync(destinationDirectory);
         }
-
+        
         fs.copyFileSync(source, finalDestination);
       }
     },

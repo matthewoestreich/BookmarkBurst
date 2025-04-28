@@ -216,8 +216,8 @@ function renderTree(nodes, parentElement) {
 
 function sortNodes(nodes) {
 	nodes.sort((a, b) => {
-		const aIsFolder = a.type === "folder";
-		const bIsFolder = b.type === "folder";
+		const aIsFolder = !a.url;
+		const bIsFolder = !b.url;
 		if (aIsFolder && !bIsFolder) {
 			return -1;
 		}
