@@ -27,34 +27,34 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 btnOpenSelectedBookmarks.addEventListener("click", () => {
-  const allChecked = getCheckedBookmarks(BOOKMARKS_TREE);
-  for (const checked of allChecked) {
-    if (!checked.url) {
-      continue;
-    }
-    api.tabs.create({ url: checked.url });
-  }
+	const allChecked = getCheckedBookmarks(BOOKMARKS_TREE);
+	for (const checked of allChecked) {
+		if (!checked.url) {
+			continue;
+		}
+		api.tabs.create({ url: checked.url });
+	}
 });
 
 btnOpenModalViewSelectedBookmarks.addEventListener("click", () => {
-  const allChecked = getCheckedBookmarks(BOOKMARKS_TREE);
-  listInModalViewSelectedBookmarks.replaceChildren();
-  for (const checked of allChecked) {
-    if (!checked.url) {
-      continue;
-    }
-    const li = document.createElement("li");
-    li.classList.add("list-group-item");
-    li.innerText = checked.title;
-    listInModalViewSelectedBookmarks.appendChild(li);
-  }
+	const allChecked = getCheckedBookmarks(BOOKMARKS_TREE);
+	listInModalViewSelectedBookmarks.replaceChildren();
+	for (const checked of allChecked) {
+		if (!checked.url) {
+			continue;
+		}
+		const li = document.createElement("li");
+		li.classList.add("list-group-item");
+		li.innerText = checked.title;
+		listInModalViewSelectedBookmarks.appendChild(li);
+	}
 });
 
 btnClearSelectedBookmarks.addEventListener("click", () => {
-  for (const node of BOOKMARKS_TREE) {
-    setCheckedRecursively(node, false, false);
-  }
-  renderTree(BOOKMARKS_TREE, ulBookmarksList);
+	for (const node of BOOKMARKS_TREE) {
+		setCheckedRecursively(node, false, false);
+	}
+	renderTree(BOOKMARKS_TREE, ulBookmarksList);
 });
 
 function handleCheckboxChange(event, node) {
@@ -68,33 +68,33 @@ function handleCheckboxChange(event, node) {
 		node.collapsed = false;
 		setCheckedRecursively(node, event.target.checked);
 	}
-  // Found bookmark
-  if (node.url) {
-    node.checked = !node.checked;
-  }
+	// Found bookmark
+	if (node.url) {
+		node.checked = !node.checked;
+	}
 
 	renderTree(BOOKMARKS_TREE, ulBookmarksList);
 }
 
 function getCheckedBookmarks(root = []) {
-  return recurse(root);
+	return recurse(root);
 
-  function recurse(nodes) {
-    const output = [];
+	function recurse(nodes) {
+		const output = [];
 
-    for (let i = 0; i < nodes.length; i++) {
-      const node = nodes[i];
-      if (!node.url && node.children) {
-        const result = recurse(node.children);
-        result.forEach(r => output.push(r));
-      }
-      if (node.checked) {
-        output.push(node);
-      }
-    }
+		for (let i = 0; i < nodes.length; i++) {
+			const node = nodes[i];
+			if (!node.url && node.children) {
+				const result = recurse(node.children);
+				result.forEach((r) => output.push(r));
+			}
+			if (node.checked) {
+				output.push(node);
+			}
+		}
 
-    return output;
-  }
+		return output;
+	}
 }
 
 function setCheckedRecursively(node, checked, skipFolders = true) {
@@ -147,9 +147,9 @@ function renderTree(nodes, parentElement) {
 		inputCheckbox.type = "checkbox";
 		inputCheckbox.id = node.id;
 		inputCheckbox.checked = node.checked;
-    inputCheckbox.addEventListener("change", (event) => {
-      handleCheckboxChange(event, node);
-    });
+		inputCheckbox.addEventListener("change", (event) => {
+			handleCheckboxChange(event, node);
+		});
 		const labelForCheckbox = document.createElement("label");
 		labelForCheckbox.classList.add("form-check-label");
 		labelForCheckbox.htmlFor = node.id;
