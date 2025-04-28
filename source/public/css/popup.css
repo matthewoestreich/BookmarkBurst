@@ -1,0 +1,14 @@
+span[aria-expanded="true"] {
+  transform: rotate(90deg);
+  transition: transform 0.2s;
+}
+
+span[aria-expanded="false"] {
+  transform: rotate(0deg);
+  transition: transform 0.2s;
+}
+
+.bookmarks-list-container {
+  max-height: 70vh;
+  overflow-y: scroll;
+}

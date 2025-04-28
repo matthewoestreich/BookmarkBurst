@@ -1,0 +1,35 @@
+{
+  "name": "bookmarkburst",
+  "version": "1.0.0",
+  "description": "Browser extension for various bookmark related tasks",
+  "main": "index.js",
+  "scripts": {
+    "build": "npm run build:chrome && npm run build:firefox",
+    "build:chrome": "BROWSER=chrome vite build",
+    "build:firefox": "BROWSER=firefox vite build",
+    "dev": "vite"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matthewoestreich/BookmarkBurst.git"
+  },
+  "keywords": [
+    "browser-extension",
+    "bookmarks",
+    "open-multiple-bookmarks",
+    "firefox",
+    "firefox-extension",
+    "chrome",
+    "chrome-extension",
+    "manage-bookmarks"
+  ],
+  "author": "Matt Oestreich",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/matthewoestreich/BookmarkBurst/issues"
+  },
+  "homepage": "https://github.com/matthewoestreich/BookmarkBurst#readme",
+  "devDependencies": {
+    "vite": "^6.3.3"
+  }
+}
