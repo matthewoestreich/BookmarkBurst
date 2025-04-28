@@ -1,5 +1,5 @@
 class BookmarkNode {
-	path = [];
+  path = [];
   /**
    * BookmarkNode is our internal symbolic representation of the builtin type  `bookmarks.BookmarkTreeNode`.
    * We use these nodes to track state (eg. checked, collapsed, etc..), as well as to render the bookmarks
@@ -114,35 +114,35 @@ btnStartFindDuplicates.addEventListener("click", () => {
   }
 
   const duplicates = findDuplicateBookmarks(BOOKMARKS_TREE, findby);
-	const duplicateEntries = Object.entries(duplicates);
+  const duplicateEntries = Object.entries(duplicates);
 
-	if (!duplicateEntries.length) {
-		return;
-	} 
+  if (!duplicateEntries.length) {
+    return;
+  }
 
-	const appendToElement = document.getElementById("duplicates-list");
-	if (!appendToElement) {
-		return;
-	}
+  const appendToElement = document.getElementById("duplicates-list");
+  if (!appendToElement) {
+    return;
+  }
 
-	appendToElement.replaceChildren();
-	
-	for (const [target, nodes] of duplicateEntries) {
-		// Wrap the duplicate bookmark html in a col
-		const col = document.createElement("div");
-		col.classList.add("col-12", "col-xl-6");
-		const duplicateHTML = generateDuplicateBookmarksHTML(target, nodes);
-		col.appendChild(duplicateHTML);
-		appendToElement.appendChild(col);
-	}
+  appendToElement.replaceChildren();
+
+  for (const [target, nodes] of duplicateEntries) {
+    // Wrap the duplicate bookmark html in a col
+    const col = document.createElement("div");
+    col.classList.add("col-12", "col-xl-6");
+    const duplicateHTML = generateDuplicateBookmarksHTML(target, nodes);
+    col.appendChild(duplicateHTML);
+    appendToElement.appendChild(col);
+  }
 });
 
 /**
  * Finds duplicates by URL or title. Only reports duplicate bookmarks, not folders.
  * @param {BookmarkNode[]} nodes
  * @param {"url" | "title"} findBy
- * @param {string[]} currentPath : typically won't be used by caller. This is to 
- * return the path for any duplicate nodes so a user knows which bookmark they will 
+ * @param {string[]} currentPath : typically won't be used by caller. This is to
+ * return the path for any duplicate nodes so a user knows which bookmark they will
  * be potentially removing.
  * @returns {{ [k: string]: BookmarkNode[] }}
  */
@@ -151,9 +151,9 @@ function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = [
    * { "url|or|title": BookmarkNode[] } */
   const cache = {};
   for (const node of nodes) {
-		if (!currentPath.length) {
-			currentPath.push(node.title || "<unnamed folder>");
-		} 
+    if (!currentPath.length) {
+      currentPath.push(node.title || "<unnamed folder>");
+    }
 
     if (!node.url) {
       if (node.children?.length) {
@@ -162,8 +162,8 @@ function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = [
           if (!cache[key]) {
             cache[key] = values;
           } else {
-						cache[key].push(...values);
-					}
+            cache[key].push(...values);
+          }
         }
       }
     } else {
@@ -494,22 +494,22 @@ function generateFolderHTML(node) {
  * @param {BookmarkNode[]} nodes : an array of the duplicates
  */
 function generateDuplicateBookmarksHTML(duplicateTarget, nodes) {
-	if (!nodes.length) {
-		return null;
-	}
+  if (!nodes.length) {
+    return null;
+  }
 
-	const card = document.createElement("div");
-	card.classList.add("card");
+  const card = document.createElement("div");
+  card.classList.add("card");
 
-	const cardBody = document.createElement("div");
-	cardBody.classList.add("card-body");
+  const cardBody = document.createElement("div");
+  cardBody.classList.add("card-body");
 
-	const cardTitle = document.createElement("div");
-	cardTitle.classList.add("card-title");
-	cardTitle.innerText = duplicateTarget;
+  const cardTitle = document.createElement("div");
+  cardTitle.classList.add("card-title");
+  cardTitle.innerText = duplicateTarget;
 
-	cardBody.appendChild(cardTitle);
-	card.appendChild(cardBody);
+  cardBody.appendChild(cardTitle);
+  card.appendChild(cardBody);
 
-	return card;
+  return card;
 }
