@@ -156,10 +156,6 @@ function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = [
    * { "url|or|title": BookmarkNode[] } */
   const cache = {};
   for (const node of nodes) {
-    //if (!currentPath.length) {
-    //  currentPath.push(node.title || "<unnamed folder>");
-    //}
-
     if (!node.url) {
       if (node.children?.length) {
         const childCache = findDuplicateBookmarks(node.children, findBy, [...currentPath, node.title]);
@@ -171,7 +167,8 @@ function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = [
           }
         }
       }
-    } else {
+    }
+    if (node.url) {
       const key = node[findBy];
       if (!cache[key]) {
         cache[key] = [];

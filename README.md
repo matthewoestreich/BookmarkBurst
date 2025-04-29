@@ -1,3 +1,3 @@
 # BookmarkBurst
 
-Browser extension for various bookmark related tasks 
+Browser extension for various bookmark related tasks
