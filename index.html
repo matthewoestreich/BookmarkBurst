@@ -4,9 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BookmarkBurst</title>
-    <link href="public/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="public/css/bootstrap-icons.min.css" rel="stylesheet" />
-    <link href="public/css/index.css" rel="stylesheet" />
   </head>
   <body class="bg-light">
     <!-- Modal to show selected bookmarks -->
@@ -43,6 +40,11 @@
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="menu-tab-detect-duplicates" data-bs-toggle="tab" data-bs-target="#pane-detect-duplicates" role="tab">
             Find Duplicates
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="menu-tab-detect-dead-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-detect-dead-bookmarks" role="tab">
+            Find Dead
           </button>
         </li>
       </ul>
@@ -85,7 +87,7 @@
             <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
               <div class="input-group mb-3">
                 <select class="form-select" id="find-duplicates-by" aria-label="Example select with button addon">
-                  <option selected disabled>Find by...</option>
+                  <option selected disabled value="">Find by...</option>
                   <option value="url">URL</option>
                   <option value="title">Title</option>
                 </select>
@@ -96,9 +98,17 @@
             <div id="duplicates-list" class="row"></div>
           </div>
         </div>
+        <div class="tab-pane" id="pane-detect-dead-bookmarks" role="tabpanel" tabindex="0">
+          <h3>Find Dead Bookmarks</h3>
+          <p>Find dead bookmark URLs. <b>Note: depending on how many bookmarks you have, this may take a little!</b></p>
+          <div class="row">
+            <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
+              <button id="start-detect-dead-bookmarks" class="btn btn-primary">Find Dead Bookmarks</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <script src="js/bootstrap.bundle.min.js"></script>
-    <script src="bookmarkBurst.js"></script>
+    <script type="module" src="./src/bookmarkBurst.js"></script>
   </body>
 </html>

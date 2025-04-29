@@ -7,8 +7,10 @@
     "48": "icons/icon.png"
   },
   "permissions": ["tabs", "bookmarks"],
+  "optional_host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_icon": "icons/icon.png"

@@ -1,3 +1,13 @@
+import browser from "webextension-polyfill";
+import "bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.min.css";
+import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
+import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
+import "./index.css";
+
+let BOOKMARKS_TREE = [];
+
 class BookmarkNode {
   path = [];
 
@@ -26,43 +36,57 @@ class BookmarkNode {
  * @typedef {BookmarkNode[]} SymbolicBookmarkTree
  */
 
-const api = typeof browser === "undefined" ? chrome : browser;
-let BOOKMARKS_TREE = [];
-
-const ulBookmarksList = document.getElementById("bookmarks-list");
-const btnOpenSelectedBookmarks = document.getElementById("open-selected-bookmarks");
-const btnClearSelectedBookmarks = document.getElementById("clear-all-selected");
-const btnOpenModalViewSelectedBookmarks = document.getElementById("open-modal-view-selected-bookmarks");
-const listInModalViewSelectedBookmarks = document.getElementById("list-modal-view-selected-bookmarks");
-const selectSortBookmarks = document.getElementById("sort-bookmarks");
-const btnStartFindDuplicates = document.getElementById("start-find-duplicates");
-const selectFindDuplicatesBy = document.getElementById("find-duplicates-by");
+const elBookmarksList = document.getElementById("bookmarks-list");
+const elFindDeadBookmarksTab = document.getElementById("menu-tab-detect-dead-bookmarks");
+const elOpenSelectedBookmarks = document.getElementById("open-selected-bookmarks");
+const elClearSelectedBookmarks = document.getElementById("clear-all-selected");
+const elOpenViewSelectBookmarksModal = document.getElementById("open-modal-view-selected-bookmarks");
+const elListSelectedBookmarksInModal = document.getElementById("list-modal-view-selected-bookmarks");
+const elSortBookmarksOptions = document.getElementById("sort-bookmarks");
+const elFindDuplicates = document.getElementById("start-find-duplicates");
+const elFindDuplicatesByOptions = document.getElementById("find-duplicates-by");
+const elDetectDeadBookmarks = document.getElementById("start-detect-dead-bookmarks");
+const elFoundDuplicatesList = document.getElementById("duplicates-list");
+const elDuplicatesStatusLabel = document.getElementById("number-of-duplicates-found");
 
 // Page loaded...
 document.addEventListener("DOMContentLoaded", async () => {
-  const bookmarksTree = await api.bookmarks.getTree();
+  const bookmarksTree = await browser.bookmarks.getTree();
   const root = bookmarksTree[0];
   BOOKMARKS_TREE = generateSymbolicTree(root.children);
   // By default sort by folders first.
   sortNodesByFolder(BOOKMARKS_TREE);
-  renderTree(BOOKMARKS_TREE, ulBookmarksList);
+  renderTree(BOOKMARKS_TREE, elBookmarksList);
+});
+
+elFindDeadBookmarksTab.addEventListener("click", async () => {
+  const hasPermissions = await browser.permissions.request({
+    origins: ["<all_urls>"],
+  });
+  if (!hasPermissions) {
+    console.error(`[BookmarkBurst][find-dead-bookmarks] Permissions denied!`);
+    elDetectDeadBookmarks.disabled = true;
+    return;
+  }
+  elDetectDeadBookmarks.disabled = false;
+  console.log(`[BookmarkBurst][find-dead-bookmarks] Permissions granted!`);
 });
 
 // Handle open selected bookmarks in new tabs.
-btnOpenSelectedBookmarks.addEventListener("click", () => {
+elOpenSelectedBookmarks.addEventListener("click", () => {
   const allChecked = getCheckedBookmarkNodes(BOOKMARKS_TREE);
   for (const checked of allChecked) {
     if (!checked.url) {
       continue;
     }
-    api.tabs.create({ url: checked.url });
+    browser.tabs.create({ url: checked.url });
   }
 });
 
 // Handle open review selected bookmarks.
-btnOpenModalViewSelectedBookmarks.addEventListener("click", () => {
+elOpenViewSelectBookmarksModal.addEventListener("click", () => {
   const allChecked = getCheckedBookmarkNodes(BOOKMARKS_TREE);
-  listInModalViewSelectedBookmarks.replaceChildren();
+  elListSelectedBookmarksInModal.replaceChildren();
   for (const checked of allChecked) {
     if (!checked.url) {
       continue;
@@ -70,20 +94,20 @@ btnOpenModalViewSelectedBookmarks.addEventListener("click", () => {
     const li = document.createElement("li");
     li.classList.add("list-group-item");
     li.innerText = checked.title;
-    listInModalViewSelectedBookmarks.appendChild(li);
+    elListSelectedBookmarksInModal.appendChild(li);
   }
 });
 
 // Handle button uncheck all click
-btnClearSelectedBookmarks.addEventListener("click", () => {
+elClearSelectedBookmarks.addEventListener("click", () => {
   for (const node of BOOKMARKS_TREE) {
     setCheckedRecursively(node, false, false);
   }
-  renderTree(BOOKMARKS_TREE, ulBookmarksList);
+  renderTree(BOOKMARKS_TREE, elBookmarksList);
 });
 
 // Handle sort select change
-selectSortBookmarks.addEventListener("change", (event) => {
+elSortBookmarksOptions.addEventListener("change", (event) => {
   switch (event.target.value) {
     case "Folders First": {
       sortNodesByFolder(BOOKMARKS_TREE);
@@ -102,12 +126,18 @@ selectSortBookmarks.addEventListener("change", (event) => {
       break;
     }
   }
-  renderTree(BOOKMARKS_TREE, ulBookmarksList);
+  renderTree(BOOKMARKS_TREE, elBookmarksList);
+});
+
+// Clear duplicate results message when selection changes
+elFindDuplicatesByOptions.addEventListener("change", () => {
+  elDuplicatesStatusLabel.innerText = "";
+  elFoundDuplicatesList.replaceChildren();
 });
 
 // Handle start finding duplicates..
-btnStartFindDuplicates.addEventListener("click", () => {
-  const findby = selectFindDuplicatesBy.value;
+elFindDuplicates.addEventListener("click", () => {
+  const findby = elFindDuplicatesByOptions.value;
   if (!findby) {
     return;
   }
@@ -117,20 +147,12 @@ btnStartFindDuplicates.addEventListener("click", () => {
   const duplicateEntriesLength = duplicateEntries.length;
 
   if (!duplicateEntriesLength) {
+    elDuplicatesStatusLabel.innerText = `No duplicates found!`;
     return;
   }
 
-  const numDuplicatesStatusLabel = document.getElementById("number-of-duplicates-found");
-  if (numDuplicatesStatusLabel) {
-    numDuplicatesStatusLabel.innerText = `${duplicateEntriesLength} duplicate${duplicateEntriesLength > 1 ? "s" : ""} found!`;
-  }
-
-  const appendToElement = document.getElementById("duplicates-list");
-  if (!appendToElement) {
-    return;
-  }
-
-  appendToElement.replaceChildren();
+  elDuplicatesStatusLabel.innerText = `${duplicateEntriesLength} duplicate${duplicateEntriesLength > 1 ? "s" : ""} found!`;
+  elFoundDuplicatesList.replaceChildren();
 
   for (const [target, nodes] of duplicateEntries) {
     // Wrap the duplicate bookmark html in a col
@@ -138,7 +160,20 @@ btnStartFindDuplicates.addEventListener("click", () => {
     col.classList.add("col-12", "col-xl-6");
     const duplicateHTML = generateDuplicateBookmarksHTML(target, findby, nodes);
     col.appendChild(duplicateHTML);
-    appendToElement.appendChild(col);
+    elFoundDuplicatesList.appendChild(col);
+  }
+});
+
+// Find bookmarks that have dead urls
+elDetectDeadBookmarks.addEventListener("click", async () => {
+  try {
+    const result = await browser.runtime.sendMessage({
+      event: "detect-dead-bookmarks",
+      bookmarks: findAllBookmarks(BOOKMARKS_TREE),
+      timeout: 5000,
+    });
+  } catch (e) {
+    console.error(`[BookmarkBurst][detect-dead-bookmarks] something went wrong!`, e);
   }
 });
 
@@ -151,40 +186,48 @@ btnStartFindDuplicates.addEventListener("click", () => {
  * be potentially removing.
  * @returns {{ [k: string]: BookmarkNode[] }}
  */
-function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = []) {
-  /** An element in `cache` has the following shape:
-   * { "url|or|title": BookmarkNode[] } */
+function findDuplicateBookmarks(nodes, findBy = "url" | "title") {
+  const allBookmarks = findAllBookmarks(nodes);
   const cache = {};
-  for (const node of nodes) {
-    if (!node.url) {
-      if (node.children?.length) {
-        const childCache = findDuplicateBookmarks(node.children, findBy, [...currentPath, node.title]);
-        for (const [key, values] of Object.entries(childCache)) {
-          if (!cache[key]) {
-            cache[key] = values;
-          } else {
-            cache[key].push(...values);
-          }
-        }
-      }
+
+  for (const bmark of allBookmarks) {
+    const findByStr = bmark[findBy];
+    if (!cache[findByStr]) {
+      cache[findByStr] = [];
     }
-    if (node.url) {
-      const key = node[findBy];
-      if (!cache[key]) {
-        cache[key] = [];
-      }
-      node.path = [...currentPath, node.title];
-      cache[key].push(node);
-    }
+    cache[findByStr].push(bmark);
   }
 
   const duplicates = {};
-  for (const [key, values] of Object.entries(cache)) {
-    if (values.length > 1) {
-      duplicates[key] = values;
+  for (const [targetStr, duplicateNodes] of Object.entries(cache)) {
+    if (duplicateNodes.length > 1) {
+      duplicates[targetStr] = duplicateNodes;
     }
   }
   return duplicates;
+}
+
+/**
+ * Recursively finds all bookmarks
+ * @param {SymbolicBookmarkTree} nodes
+ * @param {string[]} currentPath : typically not to be used by caller, we use it to track current path.
+ * @returns {BookmarkNode[]}
+ */
+function findAllBookmarks(nodes, currentPath = []) {
+  const output = [];
+  for (const node of nodes) {
+    if (!node.url) {
+      if (node.children?.length) {
+        const childBookmarks = findAllBookmarks(node.children, [...currentPath, node.title]);
+        output.push(...childBookmarks);
+      }
+    }
+    if (node.url) {
+      node.path = [...currentPath, node.title];
+      output.push(node);
+    }
+  }
+  return output;
 }
 
 /**
@@ -386,7 +429,7 @@ function generateBookmarkHTML(node) {
   inputCheckbox.checked = node.checked;
   inputCheckbox.addEventListener("change", (event) => {
     handleCheckboxChange(event, node);
-    renderTree(BOOKMARKS_TREE, ulBookmarksList);
+    renderTree(BOOKMARKS_TREE, elBookmarksList);
   });
 
   const labelForCheckbox = document.createElement("label");
@@ -441,7 +484,7 @@ function generateFolderHTML(node) {
   inputCheckbox.checked = node.checked;
   inputCheckbox.addEventListener("change", (event) => {
     handleCheckboxChange(event, node);
-    renderTree(BOOKMARKS_TREE, ulBookmarksList);
+    renderTree(BOOKMARKS_TREE, elBookmarksList);
   });
 
   const labelForCheckbox = document.createElement("label");
@@ -537,7 +580,7 @@ function generateDuplicateBookmarksHTML(duplicateTarget, targetType = "url" | "t
         return;
       }
       try {
-        await api.bookmarks.remove(node.id);
+        await browser.bookmarks.remove(node.id);
         li.remove();
       } catch (e) {
         console.error(e);
