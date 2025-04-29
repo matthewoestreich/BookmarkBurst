@@ -1,24 +1,23 @@
 class BookmarkNode {
   path = [];
+
   /**
    * BookmarkNode is our internal symbolic representation of the builtin type  `bookmarks.BookmarkTreeNode`.
    * We use these nodes to track state (eg. checked, collapsed, etc..), as well as to render the bookmarks
    * tree.
-   * @param {string} id
-   * @param {string} title
-   * @param {string | null} url
+   * @param {bookmarks.BookmarkTreeNode} node
    * @param {boolean} checked
    * @param {boolean} collapsed
-   * @param {number} dateAdded
    * @param {BookmarkNode[]} children
    */
-  constructor(id = null, title = null, url = null, checked = false, collapsed = true, dateAdded, children = []) {
-    this.id = id;
-    this.title = title;
-    this.url = url;
+  constructor(node, checked = false, collapsed = true, children = []) {
+    this.id = node.id;
+    this.title = node.title;
+    this.url = node.url;
     this.checked = checked;
     this.collapsed = collapsed;
-    this.dateAdded = dateAdded;
+    this.dateAdded = node.dateAdded;
+    this.unmodifiable = node.unmodifiable;
     this.children = children;
   }
 }
@@ -120,6 +119,11 @@ btnStartFindDuplicates.addEventListener("click", () => {
     return;
   }
 
+  const numDuplicatesStatusLabel = document.getElementById("number-of-duplicstes-found");
+  if (numDuplicatesStatusLabel) {
+    numDuplicatesStatusLabel.innerText = `${duplicateEntries.length} duplicate${duplicateEntries.length > 1 ? "s" : ""} found!`;
+  }
+
   const appendToElement = document.getElementById("duplicates-list");
   if (!appendToElement) {
     return;
@@ -131,7 +135,7 @@ btnStartFindDuplicates.addEventListener("click", () => {
     // Wrap the duplicate bookmark html in a col
     const col = document.createElement("div");
     col.classList.add("col-12", "col-xl-6");
-    const duplicateHTML = generateDuplicateBookmarksHTML(target, nodes);
+    const duplicateHTML = generateDuplicateBookmarksHTML(target, findby, nodes);
     col.appendChild(duplicateHTML);
     appendToElement.appendChild(col);
   }
@@ -151,9 +155,9 @@ function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = [
    * { "url|or|title": BookmarkNode[] } */
   const cache = {};
   for (const node of nodes) {
-    if (!currentPath.length) {
-      currentPath.push(node.title || "<unnamed folder>");
-    }
+    //if (!currentPath.length) {
+    //  currentPath.push(node.title || "<unnamed folder>");
+    //}
 
     if (!node.url) {
       if (node.children?.length) {
@@ -171,7 +175,8 @@ function findDuplicateBookmarks(nodes, findBy = "url" | "title", currentPath = [
       if (!cache[key]) {
         cache[key] = [];
       }
-      cache[key].push({ ...node, path: [...currentPath, node.title] });
+      node.path = [...currentPath, node.title];
+      cache[key].push(node);
     }
   }
 
@@ -269,7 +274,7 @@ function generateSymbolicTree(nodes) {
       continue;
     }
     const children = node.children ? generateSymbolicTree(node.children) : [];
-    const newNode = new BookmarkNode(node.id, node.title, node.url, false, true, node.dateAdded, children);
+    const newNode = new BookmarkNode(node, false, true, children);
     output.push(newNode);
   }
 
@@ -493,22 +498,92 @@ function generateFolderHTML(node) {
  * @param {string} duplicateTarget : the string of the thing that is a duplicate (the url or title)
  * @param {BookmarkNode[]} nodes : an array of the duplicates
  */
-function generateDuplicateBookmarksHTML(duplicateTarget, nodes) {
+function generateDuplicateBookmarksHTML(duplicateTarget, targetType = "url" | "title", nodes) {
   if (!nodes.length) {
     return null;
   }
 
   const card = document.createElement("div");
-  card.classList.add("card");
+  card.classList.add("card", "m-2");
+  card.style.height = "320px";
 
   const cardBody = document.createElement("div");
-  cardBody.classList.add("card-body");
+  cardBody.classList.add("card-body", "overflow-scroll");
 
   const cardTitle = document.createElement("div");
   cardTitle.classList.add("card-title");
-  cardTitle.innerText = duplicateTarget;
 
+  const cardSubTitle = document.createElement("p");
+  cardSubTitle.classList.add("small", "mb-1");
+  cardSubTitle.innerText = `Duplicate ${targetType === "url" ? "URL" : "Title"} Found`;
+
+  const cardTitleText = document.createElement("h5");
+  cardTitleText.innerText = duplicateTarget;
+
+  const ul = document.createElement("ul");
+  ul.classList.add("list-group");
+
+  cardTitle.appendChild(cardSubTitle);
+  cardTitle.appendChild(cardTitleText);
   cardBody.appendChild(cardTitle);
+
+  for (const node of nodes) {
+    const li = document.createElement("li");
+    li.classList.add("list-group-item", "d-flex", "flex-row", "align-items-center");
+
+    const deleteButton = document.createElement("button");
+    deleteButton.classList.add("btn", "btn-danger", "ms-auto", "btn-sm");
+    deleteButton.disabled = !!node.unmodifiable;
+    deleteButton.addEventListener("click", async () => {
+      if (!confirm("Select 'Ok' to confirm deletion")) {
+        return;
+      }
+      try {
+        await api.bookmarks.remove(node.id);
+        li.remove();
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    const deleteIcon = document.createElement("i");
+    deleteIcon.classList.add("bi", "bi-trash");
+
+    const detailsList = document.createElement("ul");
+    detailsList.classList.add("list-group");
+
+    // If target is URL then this will be the Title.
+    // If target is Title then this will be the URL.
+    const targetComplimentText = document.createElement("li");
+    targetComplimentText.classList.add("list-group-item", "text-start", "word-break-all", "me-2", "border-0");
+    targetComplimentText.innerText = targetType === "url" ? node.title : node.url;
+
+    const targetTypeLabel = document.createElement("b");
+    targetTypeLabel.classList.add("small");
+    targetTypeLabel.innerText = targetType === "url" ? "Title: " : "URL: ";
+
+    const bookmarkPath = document.createElement("li");
+    bookmarkPath.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-0", "pe-0");
+
+    const pathPrefix = document.createElement("b");
+    pathPrefix.innerText = "Path: ";
+
+    const pathSuffix = document.createElement("p");
+    pathSuffix.classList.add("text-start", "word-break-all", "small", "m-0");
+    pathSuffix.innerText = `${node.path.join(` ${String.fromCharCode(8594)} `)}`;
+
+    targetComplimentText.prepend(targetTypeLabel);
+    pathSuffix.prepend(pathPrefix);
+    bookmarkPath.appendChild(pathSuffix);
+    detailsList.appendChild(targetComplimentText);
+    detailsList.appendChild(bookmarkPath);
+    deleteButton.appendChild(deleteIcon);
+    li.appendChild(detailsList);
+    li.appendChild(deleteButton);
+    ul.appendChild(li);
+  }
+
+  cardBody.appendChild(ul);
   card.appendChild(cardBody);
 
   return card;
