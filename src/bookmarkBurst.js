@@ -114,14 +114,15 @@ btnStartFindDuplicates.addEventListener("click", () => {
 
   const duplicates = findDuplicateBookmarks(BOOKMARKS_TREE, findby);
   const duplicateEntries = Object.entries(duplicates);
+  const duplicateEntriesLength = duplicateEntries.length;
 
-  if (!duplicateEntries.length) {
+  if (!duplicateEntriesLength) {
     return;
   }
 
-  const numDuplicatesStatusLabel = document.getElementById("number-of-duplicstes-found");
+  const numDuplicatesStatusLabel = document.getElementById("number-of-duplicates-found");
   if (numDuplicatesStatusLabel) {
-    numDuplicatesStatusLabel.innerText = `${duplicateEntries.length} duplicate${duplicateEntries.length > 1 ? "s" : ""} found!`;
+    numDuplicatesStatusLabel.innerText = `${duplicateEntriesLength} duplicate${duplicateEntriesLength > 1 ? "s" : ""} found!`;
   }
 
   const appendToElement = document.getElementById("duplicates-list");
