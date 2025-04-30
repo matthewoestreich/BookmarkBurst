@@ -8,15 +8,15 @@ Browser extension for various bookmark related tasks with support for Chrome and
 - [Open Multiple Bookmarks at Once](#open-multiple-bookmarks-at-once)
 - [Find Duplicate Bookmarks By Title or URL](#find-duplicate-bookmarks-by-title-or-url)
 
-#### Themes
+### Themes
 
 Whether it is dark mode or light mode, choose your favorite theme for the best browsing experience!
 
-#### Open Multiple Bookmarks at Once
+### Open Multiple Bookmarks at Once
 
 Select any amount of specific bookmarks as you wish and open them all in one click! You now have fine-grained control over the selection of bookmarks to open at once, even bookmarks in different folders!
 
-#### Find Duplicate Bookmarks By Title or URL
+### Find Duplicate Bookmarks By Title or URL
 
 Search your bookmarks for duplicate Titles and URLs!
 
