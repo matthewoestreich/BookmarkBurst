@@ -31,7 +31,15 @@ class BookmarkNode {
 }
 
 /**
+ * @typedef {"url" | "title"} UrlOrTitleStringLiteral
  * @typedef {BookmarkNode[]} SymbolicBookmarkTree
+ * @typedef {{
+ *  title: string;
+ *  message: string;
+ *  okButtonText: string;
+ *  closeButtonText: string;
+ *  onOkButtonClick: (ev: MouseEvent) => any
+ * }} CreateConfirmationModalProperties
  */
 
 /** @type {SymbolicBookmarkTree} */
@@ -309,14 +317,12 @@ async function initializeBookmarkTree() {
 
 /**
  * Lets you configure a confirmation dialog and returns a `bootstrap.Modal` instance.
- * @param {string} titleText
- * @param {string} okButtonText
- * @param {string} closeButtonText
- * @param {string} messageText
- * @param {(ev: MouseEvent) => any} handleOkButtonClick
+ * @param {CreateConfirmationModalProperties} props
  * @returns {bootstrap.Modal}
  */
-function createModalConfirmation(titleText, okButtonText, closeButtonText, messageText, handleOkButtonClick) {
+function createConfirmationModal(props) {
+  const { titleText, okButtonText, closeButtonText, messageText, handleOkButtonClick } = props;
+
   const elModalConfirm = document.getElementById("modal-confirm");
   const elModalConfirmTitle = document.getElementById("modal-confirm-title");
   const elModalConfirmMessage = document.getElementById("modal-confirm-message");
@@ -378,13 +384,18 @@ function updateNode(nodes, nodeId, newProps = {}) {
 /**
  * Finds duplicates by URL or title. Only reports duplicate bookmarks, not folders.
  * @param {BookmarkNode[]} nodes
- * @param {"url" | "title"} findBy
- * @param {string[]} currentPath : typically won't be used by caller. This is to
- * return the path for any duplicate nodes so a user knows which bookmark they will
- * be potentially removing.
- * @returns {{ [k: string]: BookmarkNode[] }}
+ * @param {UrlOrTitleStringLiteral} findBy : "url" or "title"
+ * @returns {{ [k: string]: BookmarkNode[] }} : where the key `k` is the target string (the
+ * url or title) that is the duplicate (if two bookmarks had "google.com" as the URL `k`
+ * would be "google.com" - if two bookmarks had "Foo" as the title, `k` would be "Foo") and
+ * the value `BookmarkNode[]` is the duplicate nodes.
  */
-function findDuplicateBookmarks(nodes, findBy = "url" | "title") {
+function findDuplicateBookmarks(nodes, findBy) {
+  if (findBy !== "url" && findBy !== "title") {
+    console.error(`[BookmarkBurst][find-duplicate-bookmarks] invalid 'findBy' param. Expected "url" or "title" | got= '${findBy}'`);
+    return;
+  }
+
   const allBookmarks = findAllBookmarks(nodes);
   const cache = {};
 
@@ -735,9 +746,13 @@ function generateFolderHTML(node) {
 /**
  * Generaetes HTML for duplicate bookmarks.
  * @param {BookmarkNode[]} nodes : an array of the duplicates
- * @param {string} targetType : either "url" or "title"
+ * @param {UrlOrTitleStringLiteral} targetType : either "url" or "title"
  */
-function generateDuplicateBookmarksHTML(nodes, targetType = "url" | "title") {
+function generateDuplicateBookmarksHTML(nodes, targetType) {
+  if (targetType !== "url" && targetType !== "title") {
+    console.error(`[BookmarkBurst][generate-duplicate-bookmarks-html] invalid 'targetType' param. Expected "url" or "title" | got= '${targetType}'`);
+    return null;
+  }
   if (!nodes.length) {
     return null;
   }
@@ -776,23 +791,22 @@ function generateDuplicateBookmarksHTML(nodes, targetType = "url" | "title") {
     deleteButton.classList.add("btn", "btn-danger", "btn-sm", "ms-1");
     deleteButton.disabled = !!node.unmodifiable;
     deleteButton.addEventListener("click", async () => {
-      const handleConfirmOk = async () => {
-        try {
-          // The handler for the resulting event will take care of rerendering tree.
-          await browser.bookmarks.remove(node.id);
-        } catch (e) {
-          console.log("ERROR!", { error: e, node });
-        }
-      };
-      const confirmModal = createModalConfirmation(
-        "Confirm Deletion",
-        "Yes",
-        "No",
-        "Are you sure you want to delete this bookmark?",
-        handleConfirmOk,
-      );
-      if (confirmModal) {
-        confirmModal.show();
+      const confirmationModal = createConfirmationModal({
+        title: "Confirm Deletion",
+        message: "Are you sure you want to delete this bookmark?",
+        okButtonText: "Yes",
+        closeButtonText: "No",
+        onOkButtonClick: async () => {
+          try {
+            // The handler for the resulting event will take care of rerendering tree.
+            await browser.bookmarks.remove(node.id);
+          } catch (e) {
+            console.log("ERROR!", { error: e, node });
+          }
+        },
+      });
+      if (confirmationModal) {
+        confirmationModal.show();
       }
     });
 

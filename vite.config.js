@@ -1,7 +1,6 @@
-import { defineConfig } from "vite";
 import path from "path";
-import { copyStatic } from "./vitePluginCopyStatic";
-import { multiBuild } from "./vitePluginMultiBuild";
+import { defineConfig } from "vite";
+import { copyStatic, multiBuild } from "./vitePlugins";
 
 const isChrome = process.env.BROWSER === "chrome";
 // const isFirefox = process.env.BROWSER === "firefox";

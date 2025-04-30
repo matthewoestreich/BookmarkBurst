@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill";
 import { BookmarkBurst } from "./BookmarkBurst";
 
 const bookmarkBurst = new BookmarkBurst();
