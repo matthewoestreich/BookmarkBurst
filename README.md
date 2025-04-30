@@ -1,16 +1,24 @@
-# BookmarkBurst
+<p align="center">
+<img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst" width="1200px" height="400px">
+</p>
+<p align="center">Browser extension for various bookmark related tasks with support for Chrome and Firefox.</p>
 
-Browser extension for various bookmark related tasks with support for Chrome and Firefox.
+---
 
-## Features
+# Features
 
 - [Dark and Light Modes](#themes)
+- [Responsive](#responsive)
 - [Open Multiple Bookmarks at Once](#open-multiple-bookmarks-at-once)
 - [Find Duplicate Bookmarks By Title or URL](#find-duplicate-bookmarks-by-title-or-url)
 
 ### Themes
 
 Whether it is dark mode or light mode, choose your favorite theme for the best browsing experience!
+
+### Responsive
+
+Resize your browser window and watch us fit your mold!  Retains structural integrity regardless of window size, keeping the interface legible and clean, to maximize your experience.
 
 ### Open Multiple Bookmarks at Once
 
@@ -20,7 +28,7 @@ Select any amount of specific bookmarks as you wish and open them all in one cli
 
 Search your bookmarks for duplicate Titles and URLs!
 
-## Permissions
+# Permissions
 
 <table>
   <thead>
