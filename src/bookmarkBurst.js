@@ -241,7 +241,6 @@ elModalEditBookmarkSave.addEventListener("click", async () => {
     return;
   }
 
-  elModalEditBookmarkAlert.classList.add("alert");
   const originalUrl = elModalEditBookmarkBookmarkData.getAttribute("data-bookmark-url");
   const originalTitle = elModalEditBookmarkBookmarkData.getAttribute("data-bookmark-title");
   const target = elModalEditBookmarkBookmarkData.getAttribute("data-bookmark-target-field");
