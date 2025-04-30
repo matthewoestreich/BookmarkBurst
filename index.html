@@ -3,17 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="./public/icons/icon.ico" />
     <title>BookmarkBurst</title>
   </head>
   <body>
+    <!-- Modal used for confirmations -->
+    <div class="modal fade" id="modal-confirm" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 id="modal-confirm-title" class="modal-title fs-5"></h1>
+            <!--<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+          </div>
+          <div id="modal-confirm-body" class="modal-body">
+            <p id="modal-confirm-message"></p>
+          </div>
+          <div class="modal-footer">
+            <button id="modal-confirm-close-button" type="button" class="btn btn-secondary">Close</button>
+            <button id="modal-confirm-ok-button" type="button" class="btn btn-primary">Ok</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Modal to show selected bookmarks -->
-    <div
-      class="modal modal-lg fade"
-      id="modal-view-selected-bookmarks"
-      tabindex="-1"
-      aria-labelledby="label-modal-view-selected-bookmarks"
-      aria-hidden="true"
-    >
+    <div class="modal modal-lg fade" id="modal-view-selected-bookmarks" tabindex="-1">
       <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
           <div class="modal-header">
@@ -25,6 +38,41 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal for editing a bookmark -->
+    <div class="modal fade" id="modal-edit-bookmark" tabindex="-1">
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="label-modal-edit-bookmark">Edit Bookmark</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="modal-edit-bookmark-alert" class="alert" role="alert"></div>
+            <!-- Invisible element just to store the ID of the bookmark so we can access it later, slightly hacky -->
+            <div
+              id="bookmark-data"
+              style="display: none"
+              data-bookmark-id=""
+              data-bookmark-target-field=""
+              data-bookmark-title=""
+              data-bookmark-url=""
+            ></div>
+            <div class="form-floating mb-3">
+              <input id="modal-edit-bookmark-title" type="text" class="form-control" placeholder="Title" />
+              <label for="modal-edit-bookmark-title">Title</label>
+            </div>
+            <div class="form-floating mb-3">
+              <input id="modal-edit-bookmark-url" type="text" class="form-control" placeholder="URL" />
+              <label for="modal-edit-bookmark-url">URL</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="modal-edit-bookmark-close-button" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button id="modal-edit-bookmark-save-button" class="btn btn-success" type="button">Save</button>
           </div>
         </div>
       </div>
@@ -136,7 +184,7 @@
                   <button id="start-find-duplicates" class="btn btn-primary" type="button">Find Duplicates</button>
                 </div>
               </div>
-              <h5 id="number-of-duplicates-found"></h5>
+              <h3 id="number-of-duplicates-found"></h3>
               <div id="duplicates-list" class="row"></div>
             </div>
           </div>

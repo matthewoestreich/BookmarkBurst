@@ -12,13 +12,10 @@ export function multiBuild(options = { configs }) {
     apply: "build",
     closeBundle: async () => {
       for (let i = 0; i < options.configs.length; i++) {
-        // Avoid recursion - must use a unique string so we can detect each build.
-        const envString = `${i}__VITE_PLUGIN_MULTI_BUILD__${i}_${Date.now()}`;
-        if (process.env[envString]) {
-          return;
-        }
-        process.env[envString] = true;
-        await vite.build(vite.defineConfig(options.configs[i]));
+        const config = options.configs[i];
+        // Override (or set explicitly) this property. Otherwise, we go into an infinite loop.
+        config.configFile = false;
+        await vite.build(vite.defineConfig(config));
       }
     },
   };

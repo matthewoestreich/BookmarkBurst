@@ -39,6 +39,14 @@ class BookmarkBurst {
   }
 
   /**
+   *
+   * @param {(id: string, changeInfo: browser.Bookmarks.OnChangedChangeInfoType) => void} handler
+   */
+  onBookmarChanged(handler) {
+    browser.bookmarks.onChanged.addListener(handler);
+  }
+
+  /**
    * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/permissions/onAdded
    * @param {(permissions: browser.permissions.Permissions) => void} handler
    */

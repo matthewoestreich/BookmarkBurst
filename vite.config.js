@@ -36,8 +36,6 @@ export default defineConfig({
     multiBuild({
       configs: [
         {
-          // Don't re-use vite.config.js!
-          configFile: false,
           build: {
             outDir: isChrome ? "dist/chrome" : "dist/firefox",
             // Don't clean already built files!
