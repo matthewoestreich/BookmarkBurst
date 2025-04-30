@@ -1,12 +1,13 @@
 <p align="center">
 <img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst">
 </p>
-<h4 align="center">Browser extension for various bookmark related tasks with support for Chrome and Firefox.</h4>
+<h4 align="center">Browser Extension for Various Bookmark Related Tasks</h4>
 
 ---
 
 # Features
 
+- Chrome & Firefox Support
 - [Dark and Light Modes](#themes)
 - [Responsive](#responsive)
 - [Open Multiple Bookmarks at Once](#open-multiple-bookmarks-at-once)
@@ -18,7 +19,7 @@ Whether it is dark mode or light mode, choose your favorite theme for the best b
 
 ### Responsive
 
-Resize your browser window and watch us fit your mold!  Retains structural integrity regardless of window size, keeping the interface legible and clean, to maximize your experience.
+Resize your browser window and watch us fit your mold! Retains structural integrity regardless of window size, keeping the interface legible and clean, to maximize your experience.
 
 ### Open Multiple Bookmarks at Once
 
