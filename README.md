@@ -1,7 +1,7 @@
 <p align="center">
 <img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst">
 </p>
-<p align="center">Browser extension for various bookmark related tasks with support for Chrome and Firefox.</p>
+<h4 align="center">Browser extension for various bookmark related tasks with support for Chrome and Firefox.</h4>
 
 ---
 
