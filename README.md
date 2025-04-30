@@ -1,5 +1,5 @@
 <p align="center">
-<img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst" width="1200px" height="400px">
+<img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst" width="1280px" height="640px">
 </p>
 <p align="center">Browser extension for various bookmark related tasks with support for Chrome and Firefox.</p>
 
