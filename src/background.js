@@ -1,4 +1,4 @@
-import { BookmarkBurst } from "./bookmarkBurst";
+import { BookmarkBurst } from "./BookmarkBurst_";
 
 const bookmarkBurst = new BookmarkBurst();
 
