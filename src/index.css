@@ -1,3 +1,7 @@
+.main-content-container {
+  margin-top: 65px;
+}
+
 span[aria-expanded="true"] {
   transform: rotate(90deg);
   transition: transform 0.2s;

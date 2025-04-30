@@ -48,6 +48,7 @@ const elFindDuplicatesByOptions = document.getElementById("find-duplicates-by");
 const elDetectDeadBookmarks = document.getElementById("start-detect-dead-bookmarks");
 const elFoundDuplicatesList = document.getElementById("duplicates-list");
 const elDuplicatesStatusLabel = document.getElementById("number-of-duplicates-found");
+const elToggleThemeButton = document.getElementById("toggle-theme");
 
 // Page loaded...
 document.addEventListener("DOMContentLoaded", async () => {
@@ -57,6 +58,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   // By default sort by folders first.
   sortNodesByFolder(BOOKMARKS_TREE);
   renderTree(BOOKMARKS_TREE, elBookmarksList);
+});
+
+elToggleThemeButton.addEventListener("click", () => {
+  // If we are in dark mode, we need to show the light mode icon.
+  const darkModeIcon = "bi-sun-fill";
+  // If we are in light mode, we need to show the dark mode icon.
+  const lightModeIcon = "bi-moon-stars-fill";
+  const elThemeIcon = document.getElementById("theme-icon");
+  const currentTheme = document.documentElement.getAttribute("data-bs-theme");
+  console.log(currentTheme);
+  if (currentTheme === "dark") {
+    // Current theme is dark, we are switching to light.
+    document.documentElement.setAttribute("data-bs-theme", "light");
+    elThemeIcon.classList.remove(darkModeIcon);
+    elThemeIcon.classList.add(lightModeIcon);
+  } else {
+    // Current theme is light, we are switching to dark.
+    document.documentElement.setAttribute("data-bs-theme", "dark");
+    elThemeIcon.classList.remove(lightModeIcon);
+    elThemeIcon.classList.add(darkModeIcon);
+  }
 });
 
 elFindDeadBookmarksTab.addEventListener("click", async () => {
@@ -73,13 +95,19 @@ elFindDeadBookmarksTab.addEventListener("click", async () => {
 });
 
 // Handle open selected bookmarks in new tabs.
-elOpenSelectedBookmarks.addEventListener("click", () => {
-  const allChecked = getCheckedBookmarkNodes(BOOKMARKS_TREE);
-  for (const checked of allChecked) {
-    if (!checked.url) {
-      continue;
+elOpenSelectedBookmarks.addEventListener("click", async () => {
+  try {
+    const currentTab = await browser.tabs.getCurrent();
+    const allChecked = getCheckedBookmarkNodes(BOOKMARKS_TREE);
+    for (let i = 0, tabIndex = currentTab.index + 1; i < allChecked.length; i++, tabIndex++) {
+      const checked = allChecked[i];
+      if (!checked.url) {
+        continue;
+      }
+      browser.tabs.create({ url: checked.url, index: tabIndex });
     }
-    browser.tabs.create({ url: checked.url });
+  } catch (e) {
+    console.error(`[BookmarkBurst][open-selected-bookmarks]`, e);
   }
 });
 
@@ -158,7 +186,7 @@ elFindDuplicates.addEventListener("click", () => {
     // Wrap the duplicate bookmark html in a col
     const col = document.createElement("div");
     col.classList.add("col-12", "col-xl-6");
-    const duplicateHTML = generateDuplicateBookmarksHTML(target, findby, nodes);
+    const duplicateHTML = generateDuplicateBookmarksHTML(nodes, findby);
     col.appendChild(duplicateHTML);
     elFoundDuplicatesList.appendChild(col);
   }
@@ -536,10 +564,10 @@ function generateFolderHTML(node) {
 
 /**
  * Generaetes HTML for duplicate bookmarks.
- * @param {string} duplicateTarget : the string of the thing that is a duplicate (the url or title)
  * @param {BookmarkNode[]} nodes : an array of the duplicates
+ * @param {string} targetType : either "url" or "title"
  */
-function generateDuplicateBookmarksHTML(duplicateTarget, targetType = "url" | "title", nodes) {
+function generateDuplicateBookmarksHTML(nodes, targetType = "url" | "title") {
   if (!nodes.length) {
     return null;
   }
@@ -556,24 +584,20 @@ function generateDuplicateBookmarksHTML(duplicateTarget, targetType = "url" | "t
 
   const cardSubTitle = document.createElement("p");
   cardSubTitle.classList.add("small", "mb-1");
-  cardSubTitle.innerText = `Duplicate ${targetType === "url" ? "URL" : "Title"} Found`;
+  cardSubTitle.innerText = `${nodes.length} Duplicate ${targetType === "url" ? "URL" : "Title"}s Found`;
 
-  const cardTitleText = document.createElement("h5");
-  cardTitleText.innerText = duplicateTarget;
-
-  const ul = document.createElement("ul");
-  ul.classList.add("list-group");
+  const duplicatesList = document.createElement("ul");
+  duplicatesList.classList.add("list-group");
 
   cardTitle.appendChild(cardSubTitle);
-  cardTitle.appendChild(cardTitleText);
   cardBody.appendChild(cardTitle);
 
   for (const node of nodes) {
-    const li = document.createElement("li");
-    li.classList.add("list-group-item", "d-flex", "flex-row", "align-items-center");
+    const duplicateListItem = document.createElement("li");
+    duplicateListItem.classList.add("list-group-item", "d-flex", "flex-row", "align-items-center");
 
     const deleteButton = document.createElement("button");
-    deleteButton.classList.add("btn", "btn-danger", "ms-auto", "btn-sm");
+    deleteButton.classList.add("btn", "btn-danger", "btn-sm", "ms-1");
     deleteButton.disabled = !!node.unmodifiable;
     deleteButton.addEventListener("click", async () => {
       if (!confirm("Select 'Ok' to confirm deletion")) {
@@ -581,7 +605,7 @@ function generateDuplicateBookmarksHTML(duplicateTarget, targetType = "url" | "t
       }
       try {
         await browser.bookmarks.remove(node.id);
-        li.remove();
+        duplicateListItem.remove();
       } catch (e) {
         console.error(e);
       }
@@ -590,41 +614,62 @@ function generateDuplicateBookmarksHTML(duplicateTarget, targetType = "url" | "t
     const deleteIcon = document.createElement("i");
     deleteIcon.classList.add("bi", "bi-trash");
 
+    deleteButton.appendChild(deleteIcon);
+
+    const editButton = document.createElement("button");
+    editButton.classList.add("btn", "btn-primary", "ms-auto", "btn-sm");
+    editButton.disabled = !!node.unmodifiable;
+
+    const editIcon = document.createElement("i");
+    editIcon.classList.add("bi", "bi-pencil");
+
+    editButton.appendChild(editIcon);
+
     const detailsList = document.createElement("ul");
-    detailsList.classList.add("list-group");
+    detailsList.classList.add("list-group", "small");
+
+    const targetText = document.createElement("li");
+    targetText.classList.add("list-group-item", "text-start", "word-break-all", "me-2", "border-0", "pt-0", "pb-1");
+    targetText.innerText = targetType === "url" ? node.url : node.title;
+
+    const targetTextPrefix = document.createElement("b");
+    targetTextPrefix.innerText = targetType === "url" ? "URL: " : "Title: ";
 
     // If target is URL then this will be the Title.
     // If target is Title then this will be the URL.
     const targetComplimentText = document.createElement("li");
-    targetComplimentText.classList.add("list-group-item", "text-start", "word-break-all", "me-2", "border-0");
+    targetComplimentText.classList.add("list-group-item", "text-start", "word-break-all", "me-2", "border-0", "pt-0", "pb-1");
     targetComplimentText.innerText = targetType === "url" ? node.title : node.url;
 
-    const targetTypeLabel = document.createElement("b");
-    targetTypeLabel.classList.add("small");
-    targetTypeLabel.innerText = targetType === "url" ? "Title: " : "URL: ";
+    const targetComplimentTextPrefix = document.createElement("b");
+    targetComplimentTextPrefix.innerText = targetType === "url" ? "Title: " : "URL: ";
 
     const bookmarkPath = document.createElement("li");
-    bookmarkPath.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-0", "pe-0");
+    bookmarkPath.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1");
 
     const pathPrefix = document.createElement("b");
-    pathPrefix.innerText = "Path: ";
+    pathPrefix.innerText = "Folder: ";
 
     const pathSuffix = document.createElement("p");
-    pathSuffix.classList.add("text-start", "word-break-all", "small", "m-0");
+    pathSuffix.classList.add("text-start", "word-break-all", "m-0");
+    node.path.pop();
     pathSuffix.innerText = `${node.path.join(` ${String.fromCharCode(8594)} `)}`;
 
-    targetComplimentText.prepend(targetTypeLabel);
+    targetText.prepend(targetTextPrefix);
+    targetComplimentText.prepend(targetComplimentTextPrefix);
     pathSuffix.prepend(pathPrefix);
     bookmarkPath.appendChild(pathSuffix);
-    detailsList.appendChild(targetComplimentText);
+    // Ternary is to make sure data is always listed in "Title", "URL", "Path" format.
+    detailsList.appendChild(targetType === "url" ? targetComplimentText : targetText);
+    detailsList.appendChild(targetType === "url" ? targetText : targetComplimentText);
     detailsList.appendChild(bookmarkPath);
-    deleteButton.appendChild(deleteIcon);
-    li.appendChild(detailsList);
-    li.appendChild(deleteButton);
-    ul.appendChild(li);
+    duplicateListItem.appendChild(detailsList);
+    duplicateListItem.appendChild(editButton);
+    duplicateListItem.appendChild(deleteButton);
+    duplicatesList.appendChild(duplicateListItem);
   }
 
-  cardBody.appendChild(ul);
+  cardBody.appendChild(duplicatesList);
   card.appendChild(cardBody);
 
   return card;

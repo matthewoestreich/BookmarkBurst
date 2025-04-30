@@ -34,13 +34,14 @@ export default defineConfig({
     // Since Vite doesn't support UMD and IIFE output for code-splitting builds, we have to use this workaround.
     // This is the error I was getting : `Invalid value "iife" for option "output.format" - UMD and IIFE output formats are not supported for code-splitting builds.`
     multiBuild({
-      builds: [
+      configs: [
         {
           // Don't re-use vite.config.js!
           configFile: false,
           build: {
             outDir: isChrome ? "dist/chrome" : "dist/firefox",
-            emptyOutDir: false, // Don't clean already built files!
+            // Don't clean already built files!
+            emptyOutDir: false,
             lib: {
               entry: path.resolve(__dirname, "./src/background.js"),
               name: "Background",

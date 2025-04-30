@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BookmarkBurst</title>
   </head>
-  <body class="bg-light">
+  <body>
     <!-- Modal to show selected bookmarks -->
     <div
       class="modal modal-lg fade"
@@ -29,81 +29,124 @@
         </div>
       </div>
     </div>
+    <!-- Main page -->
     <div class="container">
-      <!-- Horizontal Menu (Nav) -->
-      <ul class="nav nav-pills nav-tabs nav-fill m-4 d-flex flex-row flex-nowrap" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="menu-tab-open-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">
-            Open Many
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="menu-tab-detect-duplicates" data-bs-toggle="tab" data-bs-target="#pane-detect-duplicates" role="tab">
-            Find Duplicates
-          </button>
-        </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link" id="menu-tab-detect-dead-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-detect-dead-bookmarks" role="tab">
-            Find Dead
-          </button>
-        </li>
-      </ul>
-      <!-- Content Panels -->
-      <div class="tab-content mt-3 text-center">
-        <div class="tab-pane active show" id="pane-open-bookmarks" role="tabpanel" tabindex="0">
-          <h3>Open Multiple Bookmarks</h3>
-          <p>Select which bookmarks you would like to open at once, then click "Open Selected"</p>
-          <div class="row">
-            <div class="col-sm-12 col-md-3 col-lg-2 mb-1 order-sm-last order-md-first">
-              <select id="sort-bookmarks" class="form-select form-select-sm">
-                <option value="Sort Bookmarks" selected disabled>Sort Bookmarks</option>
-                <option value="Folders First">Folders First</option>
-                <option value="Date Added">Date Added</option>
-                <option value="Alphabetical">Alphabetical</option>
-              </select>
-            </div>
-            <div class="col-sm-12 col-md-9 col-lg-10 mb-1 d-flex justify-content-md-end justify-content-evenly order-sm-first order-md-last">
-              <button id="clear-all-selected" class="btn btn-outline-primary btn-sm mx-1">Uncheck All</button>
-              <button
-                id="open-modal-view-selected-bookmarks"
-                type="button"
-                class="btn btn-outline-primary btn-sm mx-1"
-                data-bs-toggle="modal"
-                data-bs-target="#modal-view-selected-bookmarks"
-              >
-                Review Selected
-              </button>
-              <button id="open-selected-bookmarks" class="btn btn-primary btn-sm mx-1">Open Selected</button>
-            </div>
-          </div>
-          <div class="bookmarks-list-container">
-            <ul id="bookmarks-list" class="list-group text-start"></ul>
+      <!-- Navbar -->
+      <nav class="navbar navbar-expand-lg fixed-top bg-body-tertiary">
+        <div class="container">
+          <a class="navbar-brand" href="#">BookmarkBurst</a>
+          <!--
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Features</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Pricing</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link disabled" aria-disabled="true">Disabled</a>
+            </li>
+          </ul>
+        </div>
+        -->
+          <div class="ms-auto d-flex align-items-center gap-2">
+            <button id="toggle-theme" class="btn btn-outline-secondary" title="Toggle Theme">
+              <i id="theme-icon" class="bi bi-sun-fill"></i>
+            </button>
           </div>
         </div>
-        <div class="tab-pane" id="pane-detect-duplicates" role="tabpanel" tabindex="0">
-          <h3>Find Duplicate Bookmarks</h3>
-          <p>Find duplicate bookmarks by title or URL and optionally remove duplicates. <b>Note: we ignore duplicate folder names!</b></p>
-          <div class="row">
-            <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
-              <div class="input-group mb-3">
-                <select class="form-select" id="find-duplicates-by" aria-label="Example select with button addon">
-                  <option selected disabled value="">Find by...</option>
-                  <option value="url">URL</option>
-                  <option value="title">Title</option>
+      </nav>
+      <div class="main-content-container">
+        <!-- Horizontal Menu (Nav) -->
+        <ul class="nav nav-pills nav-tabs nav-fill m-4 d-flex flex-row flex-nowrap" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="menu-tab-open-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">
+              Open Many
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="menu-tab-detect-duplicates" data-bs-toggle="tab" data-bs-target="#pane-detect-duplicates" role="tab">
+              Find Duplicates
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="menu-tab-detect-dead-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-detect-dead-bookmarks" role="tab">
+              Find Dead
+            </button>
+          </li>
+        </ul>
+        <!-- Content Panels -->
+        <div class="tab-content mt-3 text-center">
+          <div class="tab-pane active show" id="pane-open-bookmarks" role="tabpanel" tabindex="0">
+            <h3>Open Multiple Bookmarks</h3>
+            <p>Select which bookmarks you would like to open at once, then click "Open Selected"</p>
+            <div class="row">
+              <div class="col-sm-12 col-md-3 col-lg-2 mb-1 order-sm-last order-md-first">
+                <select id="sort-bookmarks" class="form-select form-select-sm">
+                  <option value="Sort Bookmarks" selected disabled>Sort Bookmarks</option>
+                  <option value="Folders First">Folders First</option>
+                  <option value="Date Added">Date Added</option>
+                  <option value="Alphabetical">Alphabetical</option>
                 </select>
-                <button id="start-find-duplicates" class="btn btn-outline-primary" type="button">Find Duplicates</button>
+              </div>
+              <div class="col-sm-12 col-md-9 col-lg-10 mb-1 d-flex justify-content-md-end justify-content-evenly order-sm-first order-md-last">
+                <button id="clear-all-selected" class="btn btn-outline-primary btn-sm mx-1">Uncheck All</button>
+                <button
+                  id="open-modal-view-selected-bookmarks"
+                  type="button"
+                  class="btn btn-outline-primary btn-sm mx-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#modal-view-selected-bookmarks"
+                >
+                  Review Selected
+                </button>
+                <button id="open-selected-bookmarks" class="btn btn-primary btn-sm mx-1">Open Selected</button>
               </div>
             </div>
-            <h5 id="number-of-duplicates-found"></h5>
-            <div id="duplicates-list" class="row"></div>
+            <div class="bookmarks-list-container">
+              <ul id="bookmarks-list" class="list-group text-start"></ul>
+            </div>
           </div>
-        </div>
-        <div class="tab-pane" id="pane-detect-dead-bookmarks" role="tabpanel" tabindex="0">
-          <h3>Find Dead Bookmarks</h3>
-          <p>Find dead bookmark URLs. <b>Note: depending on how many bookmarks you have, this may take a little!</b></p>
-          <div class="row">
-            <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
-              <button id="start-detect-dead-bookmarks" class="btn btn-primary">Find Dead Bookmarks</button>
+          <div class="tab-pane" id="pane-detect-duplicates" role="tabpanel" tabindex="0">
+            <h3>Find Duplicate Bookmarks</h3>
+            <p>Find duplicate bookmarks by title or URL and optionally remove duplicates. <b>Note: we ignore duplicate folder names!</b></p>
+            <div class="row">
+              <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
+                <div class="input-group mb-3">
+                  <select class="form-select" id="find-duplicates-by" aria-label="Example select with button addon">
+                    <option selected disabled value="">Find by...</option>
+                    <option value="url">URL</option>
+                    <option value="title">Title</option>
+                  </select>
+                  <button id="start-find-duplicates" class="btn btn-primary" type="button">Find Duplicates</button>
+                </div>
+              </div>
+              <h5 id="number-of-duplicates-found"></h5>
+              <div id="duplicates-list" class="row"></div>
+            </div>
+          </div>
+          <div class="tab-pane" id="pane-detect-dead-bookmarks" role="tabpanel" tabindex="0">
+            <h3>Find Dead Bookmarks</h3>
+            <p>Find dead bookmark URLs. <b>Note: depending on how many bookmarks you have, this may take a little!</b></p>
+            <div class="row">
+              <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
+                <button id="start-detect-dead-bookmarks" class="btn btn-primary">Find Dead Bookmarks</button>
+              </div>
             </div>
           </div>
         </div>
