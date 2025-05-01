@@ -66,6 +66,7 @@ const elModalEditBookmarkClose = document.getElementById("modal-edit-bookmark-cl
 const elModalEditBookmarkAlert = document.getElementById("modal-edit-bookmark-alert");
 const elOpenManySearchTextInput = document.getElementById("open-many-tab-search-text");
 const elOpenManySearchByOptions = document.getElementById("open-many-tab-search-by");
+const elOpenManyStartSearch = document.getElementById("open-many-tab-start-search");
 
 /**
  * =========================================================================================================
@@ -301,6 +302,19 @@ elModalEditBookmarkClose.addEventListener("click", () => {
   elModalEditBookmarkAlert.innerText = "";
 });
 
+elOpenManyStartSearch.addEventListener("click", () => {
+  const queryString = elOpenManySearchTextInput.value.trim();
+  if (!queryString || queryString === "") {
+    return;
+  }
+  const searchBy = elOpenManySearchByOptions.value.toLowerCase();
+  const flattened = flattenBookmarksTree(BOOKMARKS_TREE);
+  console.log({ flattened });
+  const threshold = searchBy === "title" ? 4 : 20;
+  const searchResults = fuzzySearchBookmarks(flattened, searchBy, queryString, threshold);
+  console.log({ searchResults });
+});
+
 /**
  * =========================================================================================================
  * Functions
@@ -315,34 +329,41 @@ elModalEditBookmarkClose.addEventListener("click", () => {
  * @param {number} threshold :
  */
 function fuzzySearchBookmarks(bookmarks, searchBy, query, threshold = 3) {
+  query = query.trim().toLowerCase();
+
   return bookmarks.filter((bookmark) => {
     const candidate = bookmark[searchBy]?.toLowerCase();
     if (!candidate) {
       return false;
     }
-
-    query = query.toLowerCase();
+    if (query.length > 2 && candidate.includes(query)) {
+      return true;
+    }
 
     // Levenshtein
     const dp = Array.from({ length: candidate.length + 1 }, () => []);
-    for (let i = 0; i <= candidatelength; i++) dp[i][0] = i;
-    for (let j = 0; j <= query.length; j++) dp[0][j] = j;
-  
-    for (let i = 1; i <= candidatelength; i++) {
+    for (let i = 0; i <= candidate.length; i++) {
+      dp[i][0] = i;
+    }
+    for (let j = 0; j <= query.length; j++) {
+      dp[0][j] = j;
+    }
+
+    for (let i = 1; i <= candidate.length; i++) {
       for (let j = 1; j <= query.length; j++) {
-        if (a[i - 1] === b[j - 1]) {
+        if (candidate[i - 1] === query[j - 1]) {
           dp[i][j] = dp[i - 1][j - 1];
         } else {
           dp[i][j] = Math.min(
             dp[i - 1][j] + 1, // Deletion
             dp[i][j - 1] + 1, // Insertion
-            dp[i - 1][j - 1] + 1 // Substitution
+            dp[i - 1][j - 1] + 1, // Substitution
           );
         }
       }
     }
-  
-    return dp[candidatelength][query.length] <= threshold;
+
+    return dp[candidate.length][query.length] <= threshold;
   });
 }
 
@@ -387,7 +408,7 @@ function createConfirmationModal(props) {
       bsModal.hide();
       handleOkButtonClick(e);
     },
-    { once: true }
+    { once: true },
   );
 
   elModalConfirmCloseButton.addEventListener(
@@ -395,7 +416,7 @@ function createConfirmationModal(props) {
     () => {
       bsModal.hide();
     },
-    { once: true }
+    { once: true },
   );
 
   return bsModal;
@@ -482,7 +503,8 @@ function findAllBookmarks(nodes, currentPath = []) {
 
 /**
  * Flattens our tree into an array
- * @param {SymbolicBookmarkTree} tree 
+ * @param {SymbolicBookmarkTree} tree
+ * @returns {BookmarkNode[]}
  */
 function flattenBookmarksTree(tree) {
   const output = [];
