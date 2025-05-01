@@ -6,9 +6,6 @@ const isChrome = process.env.BROWSER === "chrome";
 // const isFirefox = process.env.BROWSER === "firefox";
 
 export default defineConfig({
-  define: {
-    "process.env.BROWSER": JSON.stringify(process.env.BROWSER),
-  },
   build: {
     emptyOutDir: true,
     outDir: isChrome ? "dist/chrome" : "dist/firefox",
@@ -22,7 +19,7 @@ export default defineConfig({
     copyStatic({
       entities: [
         {
-          source: path.resolve(__dirname, isChrome ? "./src/manifest.chrome.json" : "./src/manifest.firefox.json"),
+          source: path.resolve(__dirname, isChrome ? "./manifest.chrome.json" : "./manifest.firefox.json"),
           destination: ".",
           fileName: "manifest.json",
         },
