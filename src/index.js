@@ -64,6 +64,8 @@ const elModalEditBookmarkUrlInput = document.getElementById("modal-edit-bookmark
 const elModalEditBookmarkTitleInput = document.getElementById("modal-edit-bookmark-title");
 const elModalEditBookmarkClose = document.getElementById("modal-edit-bookmark-close-button");
 const elModalEditBookmarkAlert = document.getElementById("modal-edit-bookmark-alert");
+const elOpenManySearchTextInput = document.getElementById("open-many-tab-search-text");
+const elOpenManySearchByOptions = document.getElementById("open-many-tab-search-by");
 
 /**
  * =========================================================================================================
@@ -306,6 +308,45 @@ elModalEditBookmarkClose.addEventListener("click", () => {
  */
 
 /**
+ * Fuzzy search our bookmarks using Levenshtein distance algo.
+ * @param {BookmarkNode[]} bookmarks : flattened array of bookmarks
+ * @param {UrlOrTitleStringLiteral} searchBy : are we searching for titles or urls?
+ * @param {string} query : search query
+ * @param {number} threshold :
+ */
+function fuzzySearchBookmarks(bookmarks, searchBy, query, threshold = 3) {
+  return bookmarks.filter((bookmark) => {
+    const candidate = bookmark[searchBy]?.toLowerCase();
+    if (!candidate) {
+      return false;
+    }
+
+    query = query.toLowerCase();
+
+    // Levenshtein
+    const dp = Array.from({ length: candidate.length + 1 }, () => []);
+    for (let i = 0; i <= candidatelength; i++) dp[i][0] = i;
+    for (let j = 0; j <= query.length; j++) dp[0][j] = j;
+  
+    for (let i = 1; i <= candidatelength; i++) {
+      for (let j = 1; j <= query.length; j++) {
+        if (a[i - 1] === b[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1];
+        } else {
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1, // Deletion
+            dp[i][j - 1] + 1, // Insertion
+            dp[i - 1][j - 1] + 1 // Substitution
+          );
+        }
+      }
+    }
+  
+    return dp[candidatelength][query.length] <= threshold;
+  });
+}
+
+/**
  * Generates entire symbolic tree from scratch
  * @returns {Promise<SymbolicBookmarkTree>}
  */
@@ -346,7 +387,7 @@ function createConfirmationModal(props) {
       bsModal.hide();
       handleOkButtonClick(e);
     },
-    { once: true },
+    { once: true }
   );
 
   elModalConfirmCloseButton.addEventListener(
@@ -354,7 +395,7 @@ function createConfirmationModal(props) {
     () => {
       bsModal.hide();
     },
-    { once: true },
+    { once: true }
   );
 
   return bsModal;
@@ -434,6 +475,21 @@ function findAllBookmarks(nodes, currentPath = []) {
     if (node.url) {
       node.path = [...currentPath, node.title];
       output.push(node);
+    }
+  }
+  return output;
+}
+
+/**
+ * Flattens our tree into an array
+ * @param {SymbolicBookmarkTree} tree 
+ */
+function flattenBookmarksTree(tree) {
+  const output = [];
+  for (const node of tree) {
+    output.push(node);
+    if (node.children?.length) {
+      output.push(...flattenBookmarksTree(node.children));
     }
   }
   return output;
@@ -623,7 +679,7 @@ function generateBookmarkHTML(node) {
   }
 
   const li = document.createElement("li");
-  li.classList.add("list-group-item");
+  li.classList.add("list-group-item", "word-break-all");
 
   const divFolder = document.createElement("div");
   divFolder.classList.add("d-flex", "align-items-center");
@@ -646,6 +702,7 @@ function generateBookmarkHTML(node) {
   labelForCheckbox.htmlFor = node.id;
 
   const aLink = document.createElement("a");
+  //aLink.classList.add("overflow-hidden", "text-nowrap", "text-truncate", "d-inline-block", "w-100");
   aLink.href = node.url;
   aLink.target = "_blank";
   aLink.innerText = node.title;
