@@ -2,6 +2,7 @@
 <img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst">
 </p>
 <h4 align="center">Browser Extension for Various Bookmark Related Tasks</h4>
+<p align="center">Download for <a href="https://addons.mozilla.org/en-US/firefox/addon/bookmarkburst/">Firefox</a></p>
 
 ---
 
