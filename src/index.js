@@ -302,17 +302,26 @@ elModalEditBookmarkClose.addEventListener("click", () => {
   elModalEditBookmarkAlert.innerText = "";
 });
 
-elOpenManyStartSearch.addEventListener("click", () => {
+elOpenManyStartSearch.addEventListener("click", async () => {
+  BOOKMARKS_TREE = await initializeBookmarkTree();
   const queryString = elOpenManySearchTextInput.value.trim();
   if (!queryString || queryString === "") {
+    renderTree(BOOKMARKS_TREE, elBookmarksList);
     return;
   }
   const searchBy = elOpenManySearchByOptions.value.toLowerCase();
-  const flattened = flattenBookmarksTree(BOOKMARKS_TREE);
-  console.log({ flattened });
-  const threshold = searchBy === "title" ? 4 : 20;
-  const searchResults = fuzzySearchBookmarks(flattened, searchBy, queryString, threshold);
-  console.log({ searchResults });
+  const threshold = 3;
+  BOOKMARKS_TREE = fuzzySearchBookmarks(BOOKMARKS_TREE, searchBy, queryString, threshold);
+  renderTree(BOOKMARKS_TREE, elBookmarksList);
+});
+
+// If enter is pressed in search box, start the search
+elOpenManySearchTextInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    event.stopPropagation();
+    elOpenManyStartSearch.click();
+  }
 });
 
 /**
@@ -323,7 +332,7 @@ elOpenManyStartSearch.addEventListener("click", () => {
 
 /**
  * Fuzzy search our bookmarks using Levenshtein distance algo.
- * @param {BookmarkNode[]} bookmarks : flattened array of bookmarks
+ * @param {SymbolicBookmarkTree} bookmarks : our "tree"
  * @param {UrlOrTitleStringLiteral} searchBy : are we searching for titles or urls?
  * @param {string} query : search query
  * @param {number} threshold :
@@ -331,16 +340,15 @@ elOpenManyStartSearch.addEventListener("click", () => {
 function fuzzySearchBookmarks(bookmarks, searchBy, query, threshold = 3) {
   query = query.trim().toLowerCase();
 
-  return bookmarks.filter((bookmark) => {
-    const candidate = bookmark[searchBy]?.toLowerCase();
+  function fuzzySearch(candidate) {
     if (!candidate) {
       return false;
     }
+    candidate = candidate.toLowerCase();
     if (query.length > 2 && candidate.includes(query)) {
       return true;
     }
-
-    // Levenshtein
+    // Levenshtein Distance
     const dp = Array.from({ length: candidate.length + 1 }, () => []);
     for (let i = 0; i <= candidate.length; i++) {
       dp[i][0] = i;
@@ -348,23 +356,34 @@ function fuzzySearchBookmarks(bookmarks, searchBy, query, threshold = 3) {
     for (let j = 0; j <= query.length; j++) {
       dp[0][j] = j;
     }
-
     for (let i = 1; i <= candidate.length; i++) {
       for (let j = 1; j <= query.length; j++) {
         if (candidate[i - 1] === query[j - 1]) {
           dp[i][j] = dp[i - 1][j - 1];
         } else {
-          dp[i][j] = Math.min(
-            dp[i - 1][j] + 1, // Deletion
-            dp[i][j - 1] + 1, // Insertion
-            dp[i - 1][j - 1] + 1, // Substitution
-          );
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + 1);
         }
       }
     }
-
     return dp[candidate.length][query.length] <= threshold;
-  });
+  }
+
+  function recursiveFilter(nodes) {
+    const result = [];
+    for (const node of nodes) {
+      let childMatches = [];
+      if (node.children?.length) {
+        childMatches = recursiveFilter(node.children);
+      }
+      const isMatch = fuzzySearch(node[searchBy]);
+      if (isMatch || childMatches.length) {
+        result.push({ ...node, children: childMatches });
+      }
+    }
+    return result;
+  }
+
+  return recursiveFilter(bookmarks);
 }
 
 /**
@@ -383,7 +402,7 @@ async function initializeBookmarkTree() {
  * @returns {bootstrap.Modal}
  */
 function createConfirmationModal(props) {
-  const { titleText, okButtonText, closeButtonText, messageText, handleOkButtonClick } = props;
+  const { title, okButtonText, closeButtonText, message, onOkButtonClick } = props;
 
   const elModalConfirm = document.getElementById("modal-confirm");
   const elModalConfirmTitle = document.getElementById("modal-confirm-title");
@@ -397,16 +416,16 @@ function createConfirmationModal(props) {
 
   const bsModal = bootstrap.Modal.getOrCreateInstance(elModalConfirm);
 
-  elModalConfirmTitle.innerText = titleText;
+  elModalConfirmTitle.innerText = title;
   elModalConfirmOkButton.innerText = okButtonText;
   elModalConfirmCloseButton.innerText = closeButtonText;
-  elModalConfirmMessage.innerText = messageText;
+  elModalConfirmMessage.innerText = message;
 
   elModalConfirmOkButton.addEventListener(
     "click",
     (e) => {
       bsModal.hide();
-      handleOkButtonClick(e);
+      onOkButtonClick(e);
     },
     { once: true },
   );
@@ -701,7 +720,15 @@ function generateBookmarkHTML(node) {
   }
 
   const li = document.createElement("li");
-  li.classList.add("list-group-item", "word-break-all");
+  li.classList.add("list-group-item", "word-break-all", "border-0");
+  li.addEventListener("mouseover", function (event) {
+    this.classList.remove("border-0");
+    this.classList.add("border", "border-1");
+  });
+  li.addEventListener("mouseleave", function (event) {
+    this.classList.remove("border", "border-1");
+    this.classList.add("border-0");
+  });
 
   const divFolder = document.createElement("div");
   divFolder.classList.add("d-flex", "align-items-center");
@@ -718,6 +745,11 @@ function generateBookmarkHTML(node) {
     handleCheckboxChange(event, node);
     renderTree(BOOKMARKS_TREE, elBookmarksList);
   });
+  // Add click event to li so when the li is cllicked it checks the box.
+  li.addEventListener("click", (event) => {
+    event.stopPropagation();
+    inputCheckbox.dispatchEvent(new Event("change"));
+  });
 
   const labelForCheckbox = document.createElement("label");
   labelForCheckbox.classList.add("form-check-label");
@@ -728,6 +760,9 @@ function generateBookmarkHTML(node) {
   aLink.href = node.url;
   aLink.target = "_blank";
   aLink.innerText = node.title;
+  aLink.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
 
   // For bookmarks it acts as a spacer to align checkboxes with folders as bookmarks have greater margin than folders.
   // This is to account for the 'expand/collapse arrow' that folders have. For folders this is the expand/collapse button.
@@ -757,7 +792,15 @@ function generateFolderHTML(node) {
   }
 
   const li = document.createElement("li");
-  li.classList.add("list-group-item");
+  li.classList.add("list-group-item", "border-0");
+  li.addEventListener("mouseover", function (event) {
+    this.classList.remove("border-0");
+    this.classList.add("border", "border-1");
+  });
+  li.addEventListener("mouseleave", function (event) {
+    this.classList.remove("border", "border-1");
+    this.classList.add("border-0");
+  });
 
   const divFolder = document.createElement("div");
   divFolder.classList.add("d-flex", "align-items-center");
@@ -773,6 +816,11 @@ function generateFolderHTML(node) {
   inputCheckbox.addEventListener("change", (event) => {
     handleCheckboxChange(event, node);
     renderTree(BOOKMARKS_TREE, elBookmarksList);
+  });
+  // Add click event to li so when the li is cllicked it checks the box.
+  li.addEventListener("click", (event) => {
+    event.stopPropagation();
+    inputCheckbox.dispatchEvent(new Event("change"));
   });
 
   const labelForCheckbox = document.createElement("label");
@@ -791,7 +839,8 @@ function generateFolderHTML(node) {
   spanAction.role = "button";
   spanAction.ariaExpanded = !node.collapsed;
   spanAction.setAttribute("aria-controls", collapseId);
-  spanAction.addEventListener("click", () => {
+  spanAction.addEventListener("click", (event) => {
+    event.stopPropagation();
     // Toggle folder collapsed state.
     node.collapsed = !node.collapsed;
   });
