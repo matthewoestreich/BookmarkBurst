@@ -720,14 +720,12 @@ function generateBookmarkHTML(node) {
   }
 
   const li = document.createElement("li");
-  li.classList.add("list-group-item", "word-break-all", "border-0");
+  li.classList.add("list-group-item", "word-break-all");
   li.addEventListener("mouseover", function (event) {
-    this.classList.remove("border-0");
     this.classList.add("border", "border-1");
   });
   li.addEventListener("mouseleave", function (event) {
     this.classList.remove("border", "border-1");
-    this.classList.add("border-0");
   });
 
   const divFolder = document.createElement("div");
@@ -794,12 +792,10 @@ function generateFolderHTML(node) {
   const li = document.createElement("li");
   li.classList.add("list-group-item", "border-0");
   li.addEventListener("mouseover", function (event) {
-    this.classList.remove("border-0");
     this.classList.add("border", "border-1");
   });
   li.addEventListener("mouseleave", function (event) {
     this.classList.remove("border", "border-1");
-    this.classList.add("border-0");
   });
 
   const divFolder = document.createElement("div");
