@@ -2,14 +2,22 @@
   margin-top: 65px;
 }
 
-span[aria-expanded="true"] {
+span[data-bmb-folder-icon-expanded="1"] {
   transform: rotate(90deg);
-  transition: transform 0.2s;
+  transition: transform 0.3s;
 }
 
-span[aria-expanded="false"] {
+span[data-bmb-folder-icon-expanded="0"] {
   transform: rotate(0deg);
-  transition: transform 0.2s;
+  transition: transform 0.3s;
+}
+
+[data-bmb-expanded="0"] {
+  display: none;
+}
+
+[data-bmb-expanded="1"] {
+  display: block;
 }
 
 .bookmarks-list-container {
