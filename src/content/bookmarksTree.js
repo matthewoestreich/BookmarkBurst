@@ -7,6 +7,33 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
 /**
+ * Documenting custom data attributes for Folder and Bookmark HTML elements.
+ *
+ *  "data-bmb-id":
+ *    The BookmarkTreeNode id.
+ *
+ *  "data-bmb-title":
+ *    The BookmarkTreeNode title.
+ *
+ *  "data-bmb-date-added":
+ *    The date the BookmarkTreeNode was added as a bookmark.
+ *
+ *  "data-bmb-type":
+ *    Can either be "folder" or "bookmark".
+ *
+ *  "data-bmb-url":
+ *    The URL of the BookmarkTreeNode,
+ *
+ *  "data-bmb-folder-icon-expanded":
+ *    Used for the icon on bookmark folders. Value can be 0 or 1, 0=collapsed, 1=expanded.
+ *    Mostly for CSS selector.
+ *
+ *  "data-bmb-checkbox":
+ *    Used for bookmark checkboxes. Mostly for a query selector so we can mass uncheck every single bookmark.
+ *    At the time of writing this, it doesn't need a value, we just query for the attributes existence.
+ */
+
+/**
  * @typedef {"Folders First" | "Date Added" | "Alphabetical"} SortNodesBy
  */
 
@@ -14,6 +41,8 @@ const CHECKED_NODES = new Set();
 
 const elBookmarksList = document.getElementById("bookmarks-list");
 const elSortBookmarksSelect = document.getElementById("sort-bookmarks");
+const elOpenSelectedBookmarksButton = document.getElementById("open-selected-bookmarks");
+const elClearAllSelectedButton = document.getElementById("clear-all-selected");
 
 // Page loaded...
 document.addEventListener("DOMContentLoaded", async () => {
@@ -22,16 +51,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderRawNodes(root.children, elBookmarksList);
 });
 
+// The "select" element for sorting bookmarks
 elSortBookmarksSelect.addEventListener("change", () => {
   sortHTMLNodes(elBookmarksList, elSortBookmarksSelect.value);
 });
 
+// The button for opening all selected bookmarks
+elOpenSelectedBookmarksButton.addEventListener("click", () => {
+  alert("not impl");
+});
+
+// The button for clearing all selected bookmarks/folders
+elClearAllSelectedButton.addEventListener("click", () => {
+  const allCheckboxes = document.querySelectorAll("input[data-bmb-checkbox]");
+  console.log(`found ${allCheckboxes.length} checkboxes`);
+  for (const checkbox of allCheckboxes) {
+    checkbox.checked = false;
+  }
+  CHECKED_NODES.clear();
+});
+
 /**
- *
+ * Responsible for adding the BookmarkTreeNode to our global 'checked nodes' set.
  * @param {browser.Bookmarks.BookmarkTreeNode} node
  * @param {Set<browser.Bookmarks.BookmarkTreeNode>} checkedNodesSet
  */
-function toggleCheckedNode(node, checkedNodesSet) {
+function toggleCheckedBookmarkTreeNode(node, checkedNodesSet) {
   if (checkedNodesSet.has(node)) {
     checkedNodesSet.delete(node);
     return;
@@ -40,13 +85,16 @@ function toggleCheckedNode(node, checkedNodesSet) {
 }
 
 /**
- * Handles collapsing or expanding a node.
+ * Handles collapsing or expanding a node. Determines whether or not a folder is expanded
+ * based upon the `data-bmb-expanded` attribute. A value of "0" means collapsed, a value
+ * of "1" means expanded.
  * @param {browser.Bookmarks.BookmarkTreeNode} node
  * @param {HTMLUListElement} childUList
  * @param {SortNodesBy} sortBy
  */
-async function handleNodeCollapseOrExpand(node = null, childUList = null) {
+function handleNodeCollapseOrExpand(node = null, childUList = null) {
   try {
+    // So we can set the expanded or not value on the icon, so that CSS can rotate it (or not).
     const spanAction = childUList.closest("li")?.querySelector("span[data-bmb-folder-icon-expanded]");
     const isExpanded = Boolean(parseInt(childUList.getAttribute("data-bmb-expanded")));
 
@@ -82,6 +130,7 @@ function renderRawNodes(nodes, appendToElement) {
   sortRawNodes(nodes, elSortBookmarksSelect.value);
 
   for (const node of nodes) {
+    // Only Firefox has a "separator" type.
     if (node.type === "separator") {
       continue;
     }
@@ -106,18 +155,20 @@ function generateBookmarkHTML(node) {
     return null;
   }
 
-  const li = document.createElement("li");
-  const divFolder = document.createElement("div");
+  const checkboxId = `checkbox-${node.id}`;
+
+  const mainBookmarkLItem = document.createElement("li");
+  const divBookmarkRootContainer = document.createElement("div");
   const divFormCheck = document.createElement("div");
   const inputCheckbox = document.createElement("input");
   const labelForCheckbox = document.createElement("label");
   const aLink = document.createElement("a");
   const spanAction = document.createElement("span");
 
-  li.classList.add("list-group-item", "word-break-all");
-  li.id = `node-${node.id}`;
+  mainBookmarkLItem.classList.add("list-group-item", "word-break-all", "p-1", "ps-3");
+  mainBookmarkLItem.id = node.id;
 
-  const liAttributes = {
+  const mainBookmarkLItemAttributes = {
     "data-bmb-id": node.id,
     "data-bmb-title": node.title,
     "data-bmb-date-added": node.dateAdded,
@@ -125,18 +176,24 @@ function generateBookmarkHTML(node) {
     "data-bmb-url": node.url,
   };
 
-  Object.entries(liAttributes).forEach(([key, val]) => li.setAttribute(key, val));
+  Object.entries(mainBookmarkLItemAttributes).forEach(([key, val]) => {
+    mainBookmarkLItem.setAttribute(key, val);
+  });
 
-  divFolder.classList.add("d-flex", "align-items-center");
+  divBookmarkRootContainer.classList.add("d-flex", "align-items-center");
+  divBookmarkRootContainer.style.cursor = "pointer";
 
   divFormCheck.classList.add("form-check");
 
   inputCheckbox.classList.add("form-check-input");
   inputCheckbox.type = "checkbox";
-  inputCheckbox.id = node.id;
+  inputCheckbox.style.cursor = "pointer";
+  inputCheckbox.id = checkboxId;
+  inputCheckbox.setAttribute("data-bmb-checkbox", "true");
 
   labelForCheckbox.classList.add("form-check-label");
-  labelForCheckbox.htmlFor = node.id;
+  labelForCheckbox.style.cursor = "pointer";
+  labelForCheckbox.htmlFor = checkboxId;
 
   //aLink.classList.add("overflow-hidden", "text-nowrap", "text-truncate", "d-inline-block", "w-100");
   aLink.href = node.url;
@@ -148,41 +205,41 @@ function generateBookmarkHTML(node) {
 
   /** Event Handlers */
 
-  li.addEventListener("click", (event) => {
+  divBookmarkRootContainer.addEventListener("click", function (event) {
     event.stopPropagation();
-    if (event.target === inputCheckbox) {
+    if (event.target !== this) {
       return;
     }
     inputCheckbox.checked = !inputCheckbox.checked;
-    toggleCheckedNode(node, CHECKED_NODES);
+    toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
   });
 
-  li.addEventListener("mouseover", function (event) {
+  divBookmarkRootContainer.addEventListener("mouseover", function (event) {
     this.classList.add("bg-body-tertiary");
   });
 
-  li.addEventListener("mouseleave", function (event) {
+  divBookmarkRootContainer.addEventListener("mouseleave", function (event) {
     this.classList.remove("bg-body-tertiary");
   });
 
   inputCheckbox.addEventListener("change", (event) => {
     console.log("change event on checkbox");
     event.stopPropagation();
-    toggleCheckedNode(node, CHECKED_NODES);
+    toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
   });
 
   aLink.addEventListener("click", (event) => {
     event.stopPropagation();
   });
 
-  divFolder.appendChild(spanAction);
-  divFolder.appendChild(divFormCheck);
+  divBookmarkRootContainer.appendChild(spanAction);
+  divBookmarkRootContainer.appendChild(divFormCheck);
   labelForCheckbox.appendChild(aLink);
   divFormCheck.appendChild(inputCheckbox);
   divFormCheck.appendChild(labelForCheckbox);
-  li.appendChild(divFolder);
+  mainBookmarkLItem.appendChild(divBookmarkRootContainer);
 
-  return li;
+  return mainBookmarkLItem;
 }
 
 /**
@@ -198,31 +255,30 @@ function generateFolderHTML(node) {
 
   const childrenId = `children-${node.id}`;
 
-  const li = document.createElement("li");
-  const divFolder = document.createElement("div");
+  const mainFolderLItem = document.createElement("li");
+  const divRootContainer = document.createElement("div");
   const divFormCheck = document.createElement("div");
   const inputCheckbox = document.createElement("input");
   const labelForCheckbox = document.createElement("label");
   const spanAction = document.createElement("span");
   const strong = document.createElement("strong");
-  const divChildren = document.createElement("div");
-  const ul = document.createElement("ul");
+  const divChildrenContainer = document.createElement("div");
+  const childrenUList = document.createElement("ul");
 
-  li.classList.add("list-group-item", "p-1", "ps-3");
-  li.id = `node-${node.id}`;
+  mainFolderLItem.classList.add("list-group-item", "p-1", "ps-3");
+  mainFolderLItem.id = `node-${node.id}`;
 
   const liAttributes = {
     "data-bmb-id": node.id,
     "data-bmb-title": node.title,
     "data-bmb-date-added": node.dateAdded,
     "data-bmb-type": "folder",
-    "data-bmb-children-id": childrenId,
     "data-bmb-url": "",
   };
 
-  Object.entries(liAttributes).forEach(([key, val]) => li.setAttribute(key, val));
+  Object.entries(liAttributes).forEach(([key, val]) => mainFolderLItem.setAttribute(key, val));
 
-  divFolder.classList.add("d-flex", "align-items-center");
+  divRootContainer.classList.add("d-flex", "align-items-center");
 
   divFormCheck.classList.add("form-check");
 
@@ -231,6 +287,7 @@ function generateFolderHTML(node) {
   inputCheckbox.id = node.id;
   inputCheckbox.checked = node.checked;
   inputCheckbox.style.cursor = "pointer";
+  inputCheckbox.setAttribute("data-bmb-checkbox", "true");
 
   labelForCheckbox.classList.add("form-check-label");
   labelForCheckbox.htmlFor = node.id;
@@ -243,58 +300,79 @@ function generateFolderHTML(node) {
 
   strong.innerText = node.title || "<Unnamed Folder>";
 
-  divChildren.classList.add("collapse", "ms-2", "show");
-  divChildren.setAttribute("data-bmb-children-container", node.children.length);
+  divChildrenContainer.classList.add("collapse", "ms-2", "show");
 
-  ul.classList.add("list-group", "list-group-flush");
-  ul.id = childrenId;
-  ul.setAttribute("data-bmb-expanded", 0);
+  childrenUList.classList.add("list-group", "list-group-flush");
+  childrenUList.id = childrenId;
+  childrenUList.setAttribute("data-bmb-expanded", 0);
 
   /** Event Handlers */
 
-  divFolder.addEventListener("mouseover", function (event) {
+  divRootContainer.addEventListener("mouseover", function (event) {
     this.classList.add("bg-body-tertiary");
     this.style.cursor = "pointer";
   });
 
-  divFolder.addEventListener("mouseleave", function (event) {
+  divRootContainer.addEventListener("mouseleave", function (event) {
     this.classList.remove("bg-body-tertiary");
   });
 
-  divFolder.addEventListener("click", async function (event) {
+  divRootContainer.addEventListener("click", function (event) {
     event.stopPropagation();
     console.log(event.target);
     if (event.target !== this) {
       return;
     }
-    await handleNodeCollapseOrExpand(node, ul);
+    handleNodeCollapseOrExpand(node, childrenUList);
   });
 
   // Expand/collapse node + get child nodes
-  spanAction.addEventListener("click", async function (event) {
+  spanAction.addEventListener("click", function (event) {
     event.stopPropagation();
     try {
-      await handleNodeCollapseOrExpand(node, ul);
+      handleNodeCollapseOrExpand(node, childrenUList);
     } catch (e) {
       console.error(e);
     }
   });
 
-  inputCheckbox.addEventListener("change", (event) => {
+  // When checkbox is changed.
+  inputCheckbox.addEventListener("change", async (event) => {
     event.stopPropagation();
-    toggleCheckedNode(node, CHECKED_NODES);
+    toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
+    const children = Array.from(childrenUList.childNodes);
+    if (!children || !children.length) {
+      return;
+    }
+    // If a folder is checked, auto check it's children. But we first need to make sure it
+    // is expanded.
+    // TODO : EXPAND FOLDER IF NOT EXPANDED
+    for (const child of children) {
+      // Don't check child folders
+      if (child.dataset.bmbType === "folder") {
+        continue;
+      }
+      const childBookmarkTreeNode = await browser.bookmarks.get(child.dataset.bmbId);
+      if (childBookmarkTreeNode) {
+        toggleCheckedBookmarkTreeNode(childBookmarkTreeNode, CHECKED_NODES);
+        const childCheckboxSelector = `#checkbox-${child.id}`;
+        const elChildCheckbox = child.querySelector(childCheckboxSelector);
+        // Set child bookmark check state to what the parent folder is.
+        elChildCheckbox?.checked = inputCheckbox.checked;
+      }
+    }
   });
 
-  divChildren.appendChild(ul);
+  divChildrenContainer.appendChild(childrenUList);
   labelForCheckbox.appendChild(strong);
   divFormCheck.appendChild(inputCheckbox);
   divFormCheck.appendChild(labelForCheckbox);
-  divFolder.appendChild(spanAction);
-  divFolder.appendChild(divFormCheck);
-  li.appendChild(divFolder);
-  li.appendChild(divChildren);
+  divRootContainer.appendChild(spanAction);
+  divRootContainer.appendChild(divFormCheck);
+  mainFolderLItem.appendChild(divRootContainer);
+  mainFolderLItem.appendChild(divChildrenContainer);
 
-  return li;
+  return mainFolderLItem;
 }
 
 /**
