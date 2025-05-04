@@ -11,7 +11,7 @@ export default defineConfig({
     outDir: isChrome ? "dist/chrome" : "dist/firefox",
     rollupOptions: {
       input: {
-        index: path.resolve(__dirname, "index.html"),
+        BookmarkBurst: path.resolve(__dirname, "index.html"),
       },
     },
   },

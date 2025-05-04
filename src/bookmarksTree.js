@@ -262,7 +262,7 @@ function generateFolderHTML(node) {
   // Add click event to li so when the li is cllicked it checks the box.
   li.addEventListener("click", async function (event) {
     event.stopPropagation();
-    if (event.target === inputCheckbox) {
+    if (event.target === inputCheckbox || event.target === spanAction) {
       return;
     }
     await handleNodeCollapseOrExpand(node, ul);
@@ -343,7 +343,6 @@ function sortRawNodes(nodes, sortBy) {
       nodes.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
       break;
     }
-    case "Folders First":
     default: {
       break;
     }
