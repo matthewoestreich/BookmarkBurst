@@ -11,7 +11,6 @@ import "./index.css";
  */
 
 const CHECKED_NODES = new Set();
-window.CHECKED_NODES = CHECKED_NODES;
 
 const elBookmarksList = document.getElementById("bookmarks-list");
 const elSortBookmarksSelect = document.getElementById("sort-bookmarks");
