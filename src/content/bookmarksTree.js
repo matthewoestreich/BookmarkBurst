@@ -208,7 +208,7 @@ function generateFolderHTML(node) {
   const divChildren = document.createElement("div");
   const ul = document.createElement("ul");
 
-  li.classList.add("list-group-item");
+  li.classList.add("list-group-item", "p-1", "ps-3");
   li.id = `node-${node.id}`;
 
   const liAttributes = {
@@ -230,9 +230,11 @@ function generateFolderHTML(node) {
   inputCheckbox.type = "checkbox";
   inputCheckbox.id = node.id;
   inputCheckbox.checked = node.checked;
+  inputCheckbox.style.cursor = "pointer";
 
   labelForCheckbox.classList.add("form-check-label");
   labelForCheckbox.htmlFor = node.id;
+  labelForCheckbox.style.cursor = "pointer";
 
   spanAction.classList.add("me-2");
   spanAction.textContent = String.fromCharCode(9654);
@@ -250,18 +252,19 @@ function generateFolderHTML(node) {
 
   /** Event Handlers */
 
-  li.addEventListener("mouseover", function (event) {
+  divFolder.addEventListener("mouseover", function (event) {
     this.classList.add("bg-body-tertiary");
+    this.style.cursor = "pointer";
   });
 
-  li.addEventListener("mouseleave", function (event) {
+  divFolder.addEventListener("mouseleave", function (event) {
     this.classList.remove("bg-body-tertiary");
   });
 
-  // Add click event to li so when the li is cllicked it checks the box.
-  li.addEventListener("click", async function (event) {
+  divFolder.addEventListener("click", async function (event) {
     event.stopPropagation();
-    if (event.target === inputCheckbox || event.target === spanAction) {
+    console.log(event.target);
+    if (event.target !== this) {
       return;
     }
     await handleNodeCollapseOrExpand(node, ul);

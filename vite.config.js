@@ -37,9 +37,9 @@ export default defineConfig({
             // Don't clean already built files!
             emptyOutDir: false,
             lib: {
-              entry: path.resolve(__dirname, "./src/background.js"),
+              entry: path.resolve(__dirname, "./src/background/background.js"),
               name: "Background",
-              formats: isChrome ? ["es"] : ["iife"],
+              formats: [isChrome ? "es" : "iife"],
               fileName: () => `background.js`,
             },
             rollupOptions: {
