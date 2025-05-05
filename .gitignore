@@ -1,5 +1,5 @@
 .DS_Store
-__test_bookmark_data.*
+fake_bookmarks_*.*
 
 # Logs
 logs

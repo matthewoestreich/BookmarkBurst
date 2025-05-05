@@ -48,7 +48,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h1 class="modal-title fs-5" id="label-modal-edit-bookmark">Edit Bookmark</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!--<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
           </div>
           <div class="modal-body">
             <div id="modal-edit-bookmark-alert" class="alert" role="alert"></div>
@@ -71,7 +71,7 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button id="modal-edit-bookmark-close-button" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button id="modal-edit-bookmark-close-button" type="button" class="btn btn-secondary">Close</button>
             <button id="modal-edit-bookmark-save-button" class="btn btn-success" type="button">Save</button>
           </div>
         </div>
@@ -124,17 +124,17 @@
         <ul class="nav nav-pills nav-tabs nav-fill m-4 d-flex flex-row flex-nowrap" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="menu-tab-open-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">
-              Open Many
+              Manage
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="menu-tab-detect-duplicates" data-bs-toggle="tab" data-bs-target="#pane-detect-duplicates" role="tab">
-              Find Duplicates
+              Duplicates
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="menu-tab-detect-dead-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-detect-dead-bookmarks" role="tab">
-              Find Broken
+              Broken
             </button>
           </li>
         </ul>
@@ -142,7 +142,10 @@
         <div class="tab-content mt-3 text-center">
           <div class="tab-pane active show" id="pane-open-bookmarks" role="tabpanel" tabindex="0">
             <!--<h3>Open Multiple Bookmarks</h3>-->
-            <p>Select which bookmarks you would like to open at once, then click "Open Selected"</p>
+            <p>
+              Manage bookmarks, open multiple bookmarks, etc...<br />To open multiple at once, select which bookmarks you would like to open, then
+              click "Open Selected"
+            </p>
             <div class="row mt-5">
               <div class="col-sm-4 col-md-4 col-lg-2 mx-auto mx-lg-0 mb-1 d-lg-flex justify-content-lg-start">
                 <select id="sort-bookmarks" class="form-select form-select-sm">
@@ -185,9 +188,12 @@
           </div>
           <div class="tab-pane" id="pane-detect-duplicates" role="tabpanel" tabindex="0">
             <!--<h3>Find Duplicate Bookmarks</h3>-->
-            <p>Find duplicate bookmarks by title or URL and optionally remove duplicates. <b>Note: we ignore duplicate folder names!</b></p>
-            <div class="row">
-              <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
+            <p>
+              Find duplicate bookmarks by title or URL.<br />After the search is complete, you will be presented with the option to delete
+              duplicates.<br /><b>Note: we ignore duplicate folder names!</b>
+            </p>
+            <div class="row mt-5">
+              <div class="col-12 col-lg-4 offset-lg-2 col-md-6">
                 <div class="input-group mb-3">
                   <select class="form-select" id="find-duplicates-by" aria-label="Example select with button addon">
                     <option selected disabled value="">Find by...</option>
@@ -197,13 +203,28 @@
                   <button id="start-find-duplicates" class="btn btn-primary" type="button">Find Duplicates</button>
                 </div>
               </div>
-              <h3 id="number-of-duplicates-found"></h3>
-              <div id="duplicates-list" class="row"></div>
+              <div class="col-12 col-lg-4 col-md-6 text-start d-flex flex-column">
+                <div class="form-check">
+                  <input id="confirm-delete-bookmark" class="form-check-input" type="checkbox" value="" checked="true" />
+                  <label class="form-check-label" for="confirm-delete-bookmark"> Confirm Bookmark Deletion </label>
+                </div>
+                <div class="form-check">
+                  <input id="bulk-deletion-mode-checkbox" class="form-check-input" type="checkbox" value="" />
+                  <label class="form-check-label" for="bulk-deletion-mode-checkbox"> Bulk Deletion Mode </label>
+                </div>
+              </div>
+            </div>
+            <div class="row mt-4">
+              <div class="col-12">
+                <h3 id="number-of-duplicates-found"></h3>
+                <div id="duplicates-list" class="row"></div>
+                <div id="duplicates-list-bulk-deletion-mode"></div>
+              </div>
             </div>
           </div>
           <div class="tab-pane" id="pane-detect-dead-bookmarks" role="tabpanel" tabindex="0">
             <!--<h3>Find Broken Bookmarks</h3>-->
-            <p>Find broken bookmark. <b>Note: depending on how many bookmarks you have, this may take a little!</b></p>
+            <p>Find broken bookmarks. <b>Note: depending on how many bookmarks you have, this may take a little!</b></p>
             <div class="row">
               <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
                 <button id="start-detect-dead-bookmarks" class="btn btn-primary">Find Dead Bookmarks</button>

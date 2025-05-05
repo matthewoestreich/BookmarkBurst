@@ -451,7 +451,7 @@ function generateFolderHTML(node) {
  * @param {browser.Bookmarks.BookmarkTreeNode[]} nodes
  * @param {SortNodesBy} sortBy
  */
-function sortRawNodes(nodes, sortBy) {
+export function sortRawNodes(nodes, sortBy) {
   switch (sortBy) {
     case "Folders First": {
       nodes.sort((a, b) => {
@@ -490,7 +490,7 @@ function sortRawNodes(nodes, sortBy) {
  * @param {HTMLElement} parentElement
  * @param {SortNodesBy} sortBy
  */
-function sortHTMLNodes(parentElement, sortBy) {
+export function sortHTMLNodes(parentElement, sortBy) {
   const children = Array.from(parentElement.childNodes);
 
   children.sort((a, b) => {

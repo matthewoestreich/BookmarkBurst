@@ -6,15 +6,13 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
+import { sortRawNodes } from "./bookmarksTree.js";
+import { createEditBookmarkModal } from "./editBookmarkModal.js";
+import { createConfirmationModal } from "./confirmationModal.js";
+
 /**
  * @typedef {"title" | "url"} TargetType
- * @typedef {{
- *  title: string;
- *  message: string;
- *  okButtonText: string;
- *  closeButtonText: string;
- *  onOkButtonClick: (ev: MouseEvent) => any
- * }} CreateConfirmationModalProperties
+ * @typedef {"Folders First" | "Date Added Newest First" | "Date Added Newest Last" | "Alphabetical"} SortNodesBy
  */
 
 /**
@@ -46,7 +44,13 @@ const elFindDuplicatesButton = document.getElementById("start-find-duplicates");
 const elFindDuplicatesBySelect = document.getElementById("find-duplicates-by");
 const elFindDuplicatesStatusLabel = document.getElementById("number-of-duplicates-found");
 const elFoundDuplicatesList = document.getElementById("duplicates-list");
+const elConfirmBookmarkDeletionCheckbox = document.getElementById("confirm-delete-bookmark");
 
+browser.bookmarks.onRemoved.addListener(async (id, removeInfo) => {
+  elFindDuplicatesButton.click();
+});
+
+// Start finding duplicates
 elFindDuplicatesButton.addEventListener("click", async () => {
   const findby = elFindDuplicatesBySelect.value;
   if (!findby) {
@@ -55,7 +59,9 @@ elFindDuplicatesButton.addEventListener("click", async () => {
 
   const tree = await browser.bookmarks.getTree();
   const rootNode = tree[0];
-  const duplicates = findDuplicateBookmarksBy(rootNode.children, findby);
+  const nodes = rootNode.children;
+  sortRawNodesRecursively(nodes, "Alphabetical");
+  const duplicates = findDuplicateBookmarksBy(nodes, findby);
   const duplicateEntries = Object.entries(duplicates);
   const duplicateEntriesLength = duplicateEntries.length;
 
@@ -77,11 +83,55 @@ elFindDuplicatesButton.addEventListener("click", async () => {
   }
 });
 
+// When the select changes, clear results
+elFindDuplicatesBySelect.addEventListener("change", () => {
+  elFoundDuplicatesList.replaceChildren();
+  elFindDuplicatesStatusLabel.innerText = "";
+});
+
+// When the checkbox for "Confirm Bookmark Deletion" is clicked.
+elConfirmBookmarkDeletionCheckbox.addEventListener("click", (event) => {
+  if (elConfirmBookmarkDeletionCheckbox.checked) {
+    return;
+  }
+  event.preventDefault();
+  const confirmationModal = createConfirmationModal({
+    title: "Important",
+    message:
+      "Please note, this means you will not be asked to confirm bookmark deletion!! We are not responsible for any bookmarks that you accidentally delete!\nAre you sure?",
+    okButtonText: "Yes",
+    closeButtonText: "No",
+    onOkButtonClick: (ev) => {
+      elConfirmBookmarkDeletionCheckbox.checked = false;
+      confirmationModal.hide();
+    },
+    onCancelButtonClick: (ev) => {
+      elConfirmBookmarkDeletionCheckbox.checked = true;
+      confirmationModal.hide();
+    },
+  });
+  confirmationModal.show();
+});
+
 /**
  * ==============================================================================================================================
  * FUNCTIONS
  * ==============================================================================================================================
  */
+
+/**
+ * Parses and sorts raw BookmarkTreeNode[] recursively.
+ * @param {browser.Bookmarks.BookmarkTreeNode[]} nodes
+ * @param {SortNodesBy} sortBy
+ */
+function sortRawNodesRecursively(nodes, sortBy) {
+  sortRawNodes(nodes, sortBy);
+  for (const node of nodes) {
+    if (node.children?.length) {
+      sortRawNodesRecursively(node.children, sortBy);
+    }
+  }
+}
 
 /**
  * Recursively finds all bookmarks.
@@ -130,51 +180,6 @@ function findDuplicateBookmarksBy(nodes, findBy) {
     }
   }
   return duplicates;
-}
-
-/**
- * Lets you configure a confirmation dialog and returns a `bootstrap.Modal` instance.
- * @param {CreateConfirmationModalProperties} props
- * @returns {bootstrap.Modal}
- */
-function createConfirmationModal(props) {
-  const { title, okButtonText, closeButtonText, message, onOkButtonClick } = props;
-
-  const elModalConfirm = document.getElementById("modal-confirm");
-  const elModalConfirmTitle = document.getElementById("modal-confirm-title");
-  const elModalConfirmMessage = document.getElementById("modal-confirm-message");
-  const elModalConfirmCloseButton = document.getElementById("modal-confirm-close-button");
-  const elModalConfirmOkButton = document.getElementById("modal-confirm-ok-button");
-
-  if (!elModalConfirm || !elModalConfirmTitle || !elModalConfirmMessage || !elModalConfirmCloseButton || !elModalConfirmOkButton) {
-    return null;
-  }
-
-  const bsModal = bootstrap.Modal.getOrCreateInstance(elModalConfirm);
-
-  elModalConfirmTitle.innerText = title;
-  elModalConfirmOkButton.innerText = okButtonText;
-  elModalConfirmCloseButton.innerText = closeButtonText;
-  elModalConfirmMessage.innerText = message;
-
-  elModalConfirmOkButton.addEventListener(
-    "click",
-    (e) => {
-      bsModal.hide();
-      onOkButtonClick(e);
-    },
-    { once: true },
-  );
-
-  elModalConfirmCloseButton.addEventListener(
-    "click",
-    () => {
-      bsModal.hide();
-    },
-    { once: true },
-  );
-
-  return bsModal;
 }
 
 /**
@@ -232,96 +237,129 @@ function generateDuplicateBookmarksHTML(nodes, targetType) {
  */
 function generateDuplicateBookmarkDetailsHTML(node, targetType) {
   const duplicateListItem = document.createElement("li");
+  const deleteButton = document.createElement("button");
+  const deleteIcon = document.createElement("i");
+  const editButton = document.createElement("button");
+  const editIcon = document.createElement("i");
+  const detailsList = document.createElement("ul");
+  const targetTextListItem = document.createElement("li");
+  const targetTextParagraph = document.createElement("p");
+  const targetTextBold = document.createElement("b");
+  const targetComplimentListItem = document.createElement("li");
+  const targetComplimentParagraph = document.createElement("p");
+  const targetComplimentBold = document.createElement("b");
+  const bookmarkPathListItem = document.createElement("li");
+  const bookmarkPathBold = document.createElement("b");
+  const pathSuffix = document.createElement("p");
+
   duplicateListItem.classList.add("list-group-item", "d-flex", "flex-row", "align-items-center");
   duplicateListItem.id = `${node.id}-list-item`;
 
-  const deleteButton = document.createElement("button");
   deleteButton.classList.add("btn", "btn-danger", "btn-sm", "ms-1");
   deleteButton.disabled = !!node.unmodifiable;
   deleteButton.addEventListener("click", async () => {
+    if (!elConfirmBookmarkDeletionCheckbox.checked) {
+      try {
+        return await browser.bookmarks.remove(node.id);
+      } catch (e) {
+        return console.error(`[BookmarkBurst][delete-duplicante-bookmark]`, e);
+      }
+    }
+
     const confirmationModal = createConfirmationModal({
       title: "Confirm Deletion",
       message: "Are you sure you want to delete this bookmark?",
       okButtonText: "Yes",
       closeButtonText: "No",
+      onCancelButtonClick: () => {
+        confirmationModal.hide();
+      },
       onOkButtonClick: async () => {
         try {
           // The handler for the resulting event will take care of rerendering tree.
           await browser.bookmarks.remove(node.id);
         } catch (e) {
           console.log("ERROR!", { error: e, node });
+        } finally {
+          confirmationModal.hide();
         }
       },
     });
+
     if (confirmationModal) {
       confirmationModal.show();
     }
   });
 
-  const deleteIcon = document.createElement("i");
   deleteIcon.classList.add("bi", "bi-trash");
 
   deleteButton.appendChild(deleteIcon);
 
-  const editButton = document.createElement("button");
   editButton.classList.add("btn", "btn-primary", "ms-auto", "btn-sm");
   editButton.disabled = !!node.unmodifiable;
-  editButton.setAttribute("data-bs-toggle", "modal");
-  editButton.setAttribute("data-bs-target", "#modal-edit-bookmark");
   editButton.addEventListener("click", () => {
-    elModalEditBookmarkBookmarkData.setAttribute("data-bookmark-url", node.url);
-    elModalEditBookmarkBookmarkData.setAttribute("data-bookmark-title", node.title);
-    elModalEditBookmarkBookmarkData.setAttribute("data-bookmark-id", node.id);
-    elModalEditBookmarkBookmarkData.setAttribute("data-bookmark-target-field", targetType);
-    elModalEditBookmarkUrlInput.value = node.url || "";
-    elModalEditBookmarkTitleInput.value = node.title || "";
+    const editBookmarkModal = createEditBookmarkModal({
+      url: node.url,
+      title: node.title,
+      id: node.id,
+      targetType,
+      onCancelButtonClick: () => {
+        editBookmarkModal.hide();
+      },
+      onSaveButtonClick: async ({ setAlert, originalTitle, originalUrl, updatedUrl, updatedTitle }) => {
+        try {
+          // If any changes were made we need to update the bookmark, as well as our results that are being displayed.
+          if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
+            await browser.bookmarks.update(id, { url: updatedUrl, title: updatedTitle });
+            setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
+            // Rerun duplicate bookmark check to 'refresh' our duplicate results.
+            // TODO: could prob just edit the HTML directly without having to rerun an expensive task.
+            elFindDuplicatesButton.click();
+          }
+        } catch (e) {
+          setAlert({ alertMessage: "Error! Something went wrong!", alertType: "danger" });
+          console.error(`[BookmarkBlast][edit-bookmark-modal-save] Error saving bookmark!`, e);
+        }
+      },
+    });
+
+    if (editBookmarkModal) {
+      editBookmarkModal.show();
+    }
   });
 
-  const editIcon = document.createElement("i");
   editIcon.classList.add("bi", "bi-pencil");
 
   editButton.appendChild(editIcon);
 
-  const detailsList = document.createElement("ul");
   detailsList.classList.add("list-group", "small");
 
-  const targetTextListItem = document.createElement("li");
   targetTextListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1", "d-flex", "flex-row");
 
-  const targetTextParagraph = document.createElement("p");
   targetTextParagraph.classList.add("text-start", "word-break-all", "mb-0");
   targetTextParagraph.id = `${node.id}-${targetType}`;
   targetTextParagraph.innerText = `${String.fromCharCode(160)}${targetType === "url" ? node.url : node.title}`;
 
-  const targetTextBold = document.createElement("b");
   targetTextBold.innerText = targetType === "url" ? "URL: " : "Title: ";
 
   targetTextListItem.appendChild(targetTextBold);
   targetTextListItem.appendChild(targetTextParagraph);
 
-  // If target is URL then this will be the Title.
-  // If target is Title then this will be the URL.
-  const targetComplimentListItem = document.createElement("li");
   targetComplimentListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1", "d-flex", "flex-row");
 
-  const targetComplimentParagraph = document.createElement("p");
   targetComplimentParagraph.classList.add("text-start", "word-break-all", "mb-0");
   targetComplimentParagraph.id = `${node.id}-${targetType === "url" ? "title" : "url"}`;
   targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${targetType === "url" ? node.title : node.url}`;
 
-  const targetComplimentBold = document.createElement("b");
   targetComplimentBold.innerText = targetType === "url" ? "Title: " : "URL: ";
 
   targetComplimentListItem.appendChild(targetComplimentBold);
   targetComplimentListItem.appendChild(targetComplimentParagraph);
 
-  const bookmarkPathListItem = document.createElement("li");
   bookmarkPathListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1");
 
-  const bookmarkPathBold = document.createElement("b");
   bookmarkPathBold.innerText = "Folder: ";
 
-  const pathSuffix = document.createElement("p");
   pathSuffix.classList.add("text-start", "word-break-all", "m-0");
   node.path.pop();
   pathSuffix.innerText = `${node.path.join(` ${String.fromCharCode(8594)} `)}`;
