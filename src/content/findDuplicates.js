@@ -7,7 +7,7 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
 /**
- * @typedef {"title" | "url"} FindNodesBy
+ * @typedef {"title" | "url"} TargetType
  * @typedef {{
  *  title: string;
  *  message: string;
@@ -111,7 +111,7 @@ function findAllBookmarks(nodes, currentPath = []) {
 /**
  *
  * @param {browser.Bookmarks.BookmarkTreeNode[]} nodes
- * @param {FindNodesBy} findBy
+ * @param {TargetType} findBy
  */
 function findDuplicateBookmarksBy(nodes, findBy) {
   const allBookmarks = findAllBookmarks(nodes);
@@ -182,7 +182,7 @@ function createConfirmationModal(props) {
 /**
  * Generaetes HTML for duplicate bookmarks.
  * @param {BookmarkNode[]} nodes : an array of the duplicates
- * @param {UrlOrTitleStringLiteral} targetType : either "url" or "title"
+ * @param {TargetType} targetType : either "url" or "title"
  */
 function generateDuplicateBookmarksHTML(nodes, targetType) {
   if (targetType !== "url" && targetType !== "title") {
@@ -230,7 +230,7 @@ function generateDuplicateBookmarksHTML(nodes, targetType) {
 /**
  *
  * @param {*} node
- * @param {UrlOrTitleStringLiteral} targetType
+ * @param {TargetType} targetType
  */
 function generateDuplicateBookmarkDetailsHTML(node, targetType) {
   const duplicateListItem = document.createElement("li");
