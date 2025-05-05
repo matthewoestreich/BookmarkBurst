@@ -43,7 +43,7 @@ import "./index.css";
  */
 
 /**
- * @typedef {"Folders First" | "Date Added" | "Alphabetical"} SortNodesBy
+ * @typedef {"Folders First" | "Date Added Newest First" | "Date Added Newest Last" | "Alphabetical"} SortNodesBy
  * @typedef {"title" | "url"} SearchNodesBy
  */
 
@@ -467,7 +467,11 @@ function sortRawNodes(nodes, sortBy) {
       });
       break;
     }
-    case "Date Added": {
+    case "Date Added Newest First": {
+      nodes.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
+      break;
+    }
+    case "Date Added Newest Last": {
       nodes.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
       break;
     }
@@ -502,7 +506,10 @@ function sortHTMLNodes(parentElement, sortBy) {
       }
       return a.dataset.bmbTitle.localeCompare(b.dataset.bmbTitle);
     }
-    if (sortBy === "Date Added") {
+    if (sortBy === "Date Added Newest First") {
+      return (+b.dataset.bmbDateAdded || 0) - (+a.dataset.bmbDateAdded || 0);
+    }
+    if (sortBy === "Date Added Newest Last") {
       return (+a.dataset.bmbDateAdded || 0) - (+b.dataset.bmbDateAdded || 0);
     }
     if (sortBy === "Alphabetical") {
