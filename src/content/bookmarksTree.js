@@ -34,42 +34,103 @@ import "./index.css";
  */
 
 /**
- * @typedef {"Folders First" | "Date Added" | "Alphabetical"} SortNodesBy
+ * Other misc notes:
+ *
+ *  - A parent folder (li) children will be mounted on a child node with the id of `#children-${parentLI.getAttribute("data-bmb-id")}`
+ *    So if you wanted to target the children for a node that has the id of "abc123", you could do:
+ *      `const parent = document.querySelector("#node-abc123");`
+ *      `const childMountEl = parent.querySelector(`#children-${parent.dataset.bmbId}`);`
  */
 
+/**
+ * @typedef {"Folders First" | "Date Added" | "Alphabetical"} SortNodesBy
+ * @typedef {"title" | "url"} SearchNodesBy
+ */
+
+/** @type {Set<browser.Bookmarks.BookmarkTreeNode>} */
 const CHECKED_NODES = new Set();
 
-const elBookmarksList = document.getElementById("bookmarks-list");
+const elRootBookmarksList = document.getElementById("bookmarks-list");
 const elSortBookmarksSelect = document.getElementById("sort-bookmarks");
 const elOpenSelectedBookmarksButton = document.getElementById("open-selected-bookmarks");
 const elClearAllSelectedButton = document.getElementById("clear-all-selected");
+const elSearchBookmarksText = document.getElementById("open-many-tab-search-text");
+const elSearchBookmarksButton = document.getElementById("open-many-tab-start-search");
+
+// Making an exception and putting this function here instead of in the FUNCTIONS section
+async function initializeTree() {
+  const bookmarksTree = await browser.bookmarks.getTree();
+  const root = bookmarksTree[0];
+  renderRawNodes(root.children, elRootBookmarksList);
+}
 
 // Page loaded...
 document.addEventListener("DOMContentLoaded", async () => {
-  const bookmarksTree = await browser.bookmarks.getTree();
-  const root = bookmarksTree[0];
-  renderRawNodes(root.children, elBookmarksList);
+  await initializeTree();
 });
 
 // The "select" element for sorting bookmarks
 elSortBookmarksSelect.addEventListener("change", () => {
-  sortHTMLNodes(elBookmarksList, elSortBookmarksSelect.value);
+  sortHTMLNodes(elRootBookmarksList, elSortBookmarksSelect.value);
 });
 
 // The button for opening all selected bookmarks
-elOpenSelectedBookmarksButton.addEventListener("click", () => {
-  alert("not impl");
+elOpenSelectedBookmarksButton.addEventListener("click", async () => {
+  try {
+    const currentTab = await browser.tabs.getCurrent();
+    let tabIndex = currentTab.index + 1;
+
+    for (const checked of CHECKED_NODES) {
+      if (checked.url) {
+        const lazyUrl = browser.runtime.getURL("lazy-load.html#") + checked.url;
+        browser.tabs.create({ url: lazyUrl, index: tabIndex, active: false });
+        tabIndex++;
+      }
+    }
+  } catch (e) {
+    console.error(`[BookmarkBurst][open-selected-bookmarks]`, e);
+  }
 });
 
 // The button for clearing all selected bookmarks/folders
 elClearAllSelectedButton.addEventListener("click", () => {
   const allCheckboxes = document.querySelectorAll("input[data-bmb-checkbox]");
-  console.log(`found ${allCheckboxes.length} checkboxes`);
   for (const checkbox of allCheckboxes) {
     checkbox.checked = false;
   }
   CHECKED_NODES.clear();
 });
+
+// Search bookmarks
+elSearchBookmarksButton.addEventListener("click", async () => {
+  const searchText = document.getElementById("open-many-tab-search-text")?.value;
+  if (!searchText || searchText === "") {
+    return await initializeTree();
+  }
+  const searchBy = document.getElementById("open-many-tab-search-by")?.value;
+  if (!searchBy || searchBy === "" || (searchBy !== "url" && searchBy !== "title")) {
+    return null;
+  }
+  const bookmarksTree = await browser.bookmarks.getTree();
+  const root = bookmarksTree[0];
+  const results = searchBookmarks(searchText, searchBy, root.children);
+  renderRawNodes(results, elRootBookmarksList);
+});
+
+// If someone presses Enter in the search bar, start the search.
+elSearchBookmarksText.addEventListener("keyup", (event) => {
+  if (event.key !== "Enter") {
+    return;
+  }
+  event.stopPropagation();
+  elSearchBookmarksButton.click();
+});
+
+/**
+ * ==============================================================================================================================
+ * FUNCTIONS
+ * ==============================================================================================================================
+ */
 
 /**
  * Responsible for adding the BookmarkTreeNode to our global 'checked nodes' set.
@@ -143,6 +204,12 @@ function renderRawNodes(nodes, appendToElement) {
     }
   }
 }
+
+/**
+ * ==============================================================================================================================
+ * FUNCTIONS : HTML Generation
+ * ==============================================================================================================================
+ */
 
 /**
  * Generates HTML for bookmark type of BookmarkNode.
@@ -223,7 +290,6 @@ function generateBookmarkHTML(node) {
   });
 
   inputCheckbox.addEventListener("change", (event) => {
-    console.log("change event on checkbox");
     event.stopPropagation();
     toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
   });
@@ -308,18 +374,17 @@ function generateFolderHTML(node) {
 
   /** Event Handlers */
 
-  divRootContainer.addEventListener("mouseover", function (event) {
+  divRootContainer.addEventListener("mouseover", function () {
     this.classList.add("bg-body-tertiary");
     this.style.cursor = "pointer";
   });
 
-  divRootContainer.addEventListener("mouseleave", function (event) {
+  divRootContainer.addEventListener("mouseleave", function () {
     this.classList.remove("bg-body-tertiary");
   });
 
   divRootContainer.addEventListener("click", function (event) {
     event.stopPropagation();
-    console.log(event.target);
     if (event.target !== this) {
       return;
     }
@@ -340,14 +405,12 @@ function generateFolderHTML(node) {
   inputCheckbox.addEventListener("change", async (event) => {
     event.stopPropagation();
     toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
-    const children = Array.from(childrenUList.childNodes);
-    if (!children || !children.length) {
-      return;
+    // If a folder is checked, auto check it's children.
+    // In order to make sure it has children to check, we need to expand it first (if it isn't already).
+    if (!Boolean(parseInt(childrenUList.getAttribute("data-bmb-expanded")))) {
+      handleNodeCollapseOrExpand(node, childrenUList);
     }
-    // If a folder is checked, auto check it's children. But we first need to make sure it
-    // is expanded.
-    // TODO : EXPAND FOLDER IF NOT EXPANDED
-    for (const child of children) {
+    for (const child of Array.from(childrenUList.childNodes)) {
       // Don't check child folders
       if (child.dataset.bmbType === "folder") {
         continue;
@@ -358,7 +421,9 @@ function generateFolderHTML(node) {
         const childCheckboxSelector = `#checkbox-${child.id}`;
         const elChildCheckbox = child.querySelector(childCheckboxSelector);
         // Set child bookmark check state to what the parent folder is.
-        elChildCheckbox?.checked = inputCheckbox.checked;
+        if (elChildCheckbox) {
+          elChildCheckbox.checked = inputCheckbox.checked;
+        }
       }
     }
   });
@@ -376,23 +441,10 @@ function generateFolderHTML(node) {
 }
 
 /**
- * Generates skeleton
- * @returns
+ * ==============================================================================================================================
+ * FUNCTIONS : Sorting Related
+ * ==============================================================================================================================
  */
-function generateSkeletonHTML() {
-  const div = document.createElement("div");
-  const spanTop = document.createElement("span");
-  const spanMid = document.createElement("span");
-  const spanBot = document.createElement("span");
-  spanTop.classList.add("placeholder", "w-50");
-  spanMid.classList.add("placeholder", "w-75");
-  spanBot.classList.add("placeholder", "w-25");
-  div.appendChild(spanTop);
-  div.appendChild(spanMid);
-  div.appendChild(document.createElement("br"));
-  div.appendChild(spanBot);
-  return div;
-}
 
 /**
  * Parses and sorts raw BookmarkTreeNode[]
@@ -460,9 +512,146 @@ function sortHTMLNodes(parentElement, sortBy) {
 
   children.forEach((child) => {
     parentElement.appendChild(child);
-    const elGrandchildren = child.querySelector(`#${child.dataset.bmbChildrenId}`);
+    const elGrandchildren = child.querySelector(`#children-${child.dataset.bmbId}`);
     if (elGrandchildren) {
       sortHTMLNodes(elGrandchildren, sortBy);
     }
   });
+}
+
+/**
+ * ==============================================================================================================================
+ * FUNCTIONS : Search Related
+ * ==============================================================================================================================
+ */
+
+/**
+ * Normalize text for better search matching.
+ * @param {string} text
+ * @returns {string}
+ */
+function normalizeSearchString(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s\/\.\-]/g, "")
+    .trim();
+}
+
+/**
+ * Calculates the Levenshtein distance between two strings.
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+function levenshteinDistance(a, b) {
+  const dp = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) {
+    dp[0][j] = j;
+  }
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      if (a[i - 1] === b[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1, // delete
+          dp[i][j - 1] + 1, // insert
+          dp[i - 1][j - 1] + 1, // substitute
+        );
+      }
+    }
+  }
+  return dp[a.length][b.length];
+}
+
+/**
+ * Takes an array of query strings and an array of target strings and
+ * runs the levenshtein distance on each combo, calculating a more fine
+ * grained distance.
+ * @param {string[]} queryTokens
+ * @param {string[]} targetTokens
+ * @returns
+ */
+function tokenBasedSimilarity(queryTokens, targetTokens) {
+  let totalSimilarity = 0;
+  for (const qToken of queryTokens) {
+    let maxSim = 0;
+    for (const tToken of targetTokens) {
+      const distance = levenshteinDistance(qToken, tToken);
+      const maxLen = Math.max(qToken.length, tToken.length);
+      const similarity = 1 - distance / maxLen;
+      if (similarity > maxSim) {
+        maxSim = similarity;
+      }
+    }
+    totalSimilarity += maxSim;
+  }
+  return totalSimilarity / queryTokens.length;
+}
+
+/**
+ * Calculate a simple relevance score between query and target string.
+ * I would say a `targetScore` of 25 is a good place to start. The lower the `targetScore`
+ * the more you can expect to match.
+ * @param {string} query
+ * @param {string} target
+ * @param {number} targetScore : number 1 - 100
+ *  (if number is less than 1, we normalize it to 1, if a number is >100 we normalize it to 100)
+ * @returns {boolean}
+ */
+function scoreSearchMatch(query, target, targetScore) {
+  if (!target) {
+    return false;
+  }
+  if (targetScore < 1) {
+    targetScore = 1;
+  } else if (targetScore > 100) {
+    targetScore = 100;
+  }
+  let score = 0;
+  const normQuery = normalizeSearchString(query);
+  const normTarget = normalizeSearchString(target);
+  if (normTarget === normQuery) {
+    // If we have an exact match I'd say that qualifies...
+    return true;
+  } else if (normTarget.startsWith(normQuery)) {
+    score += 70;
+  } else if (normTarget.includes(normQuery)) {
+    score += 50;
+  }
+  const queryTokens = normQuery.match(/\w+/g) || [];
+  const targetTokens = normTarget.match(/\w+/g) || [];
+  const overlap = queryTokens.filter((t) => targetTokens.includes(t));
+  score += overlap.length * 10;
+  const similarity = tokenBasedSimilarity(queryTokens, targetTokens);
+  score += Math.floor(similarity * 40);
+  return score >= targetScore;
+}
+
+/**
+ *
+ * @param {string} searchString : the string used to search
+ * @param {SearchNodesBy} searchBy
+ * @param {browser.Bookmarks.BookmarkTreeNode[]} nodes
+ * @returns {browser.Bookmarks.BookmarkTreeNode[]}
+ */
+function searchBookmarks(searchString, searchBy, nodes) {
+  if (searchBy !== "title" && searchBy !== "url") {
+    return [];
+  }
+  const output = [];
+  for (const node of nodes) {
+    if (node[searchBy] && scoreSearchMatch(searchString, node[searchBy], 25)) {
+      output.push(node);
+    }
+    if (node.children?.length) {
+      const foundChildren = searchBookmarks(searchString, searchBy, node.children);
+      if (foundChildren && foundChildren.length) {
+        // Keep the structure of our tree
+        node.children = foundChildren;
+        output.push(node);
+      }
+    }
+  }
+  return output;
 }

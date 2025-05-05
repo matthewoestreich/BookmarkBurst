@@ -12,6 +12,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         BookmarkBurst: path.resolve(__dirname, "index.html"),
+        LazyLoad: path.resolve(__dirname, "lazy-load.html"),
       },
     },
   },

@@ -12,6 +12,8 @@
 - [Dark and Light Modes](#themes)
 - [Responsive](#responsive)
 - [Open Multiple Bookmarks at Once](#open-multiple-bookmarks-at-once)
+  - In order to save compute resources, new tabs are lazy-loaded
+  - This means websites are not fully loaded until you select the tab!
 - [Find Duplicate Bookmarks By Title or URL](#find-duplicate-bookmarks-by-title-or-url)
 
 ### Themes

@@ -1,0 +1,18 @@
+<!--
+ * For lazy-loading new tabs. To save on resources, new tabs are not fully loaded
+ * until the user clicks the tab. This is the placeholder HTML we use in place of
+ * the actual website.
+ * We stick the actual URL on the end of our "lazy-load.html" URL as an href/hash.
+ * Once the new tab is clicked we replace the URL with the first href/hash.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title></title>
+  </head>
+  <body>
+    <script type="module" src="./src/content/lazy-load.js"></script>
+  </body>
+</html>
