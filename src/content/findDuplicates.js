@@ -181,7 +181,7 @@ function createConfirmationModal(props) {
 
 /**
  * Generaetes HTML for duplicate bookmarks.
- * @param {BookmarkNode[]} nodes : an array of the duplicates
+ * @param {BookmarkTreeNodeExtended[] | browser.Bookmarks.BookmarkTreeNode[]} nodes : an array of the duplicates
  * @param {TargetType} targetType : either "url" or "title"
  */
 function generateDuplicateBookmarksHTML(nodes, targetType) {
