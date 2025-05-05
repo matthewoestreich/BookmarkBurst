@@ -22,7 +22,7 @@ function newFakeBookmarkFile(bookmarks) {
 <DL><p>
     <DT><H3 ADD_DATE="1746027888" LAST_MODIFIED="1746465671">BookmarkBurst</H3>
         <DL><p>
-            ${bookmarksStr}
+${bookmarksStr}
         </DL><p>
 </DL>
 `;
