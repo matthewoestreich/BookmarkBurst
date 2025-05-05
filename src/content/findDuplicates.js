@@ -25,8 +25,6 @@ class BookmarkTreeNodeExtended {
 
   /**
    * BookmarkNode is our internal symbolic representation of the builtin type  `bookmarks.BookmarkTreeNode`.
-   * We use these nodes to track state (eg. checked, collapsed, etc..), as well as to render the bookmarks
-   * tree.
    * @param {bookmarks.BookmarkTreeNode} node
    * @param {boolean} checked
    * @param {boolean} collapsed
