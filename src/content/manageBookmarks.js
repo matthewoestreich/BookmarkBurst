@@ -1,10 +1,15 @@
 import browser from "webextension-polyfill";
 import * as bootstrap from "bootstrap";
+
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.min.css";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
+
+import { createLoadingSpinner } from "./loadingSpinner";
+import { createEditBookmarkModal } from "./editBookmarkModal";
+import { createConfirmationModal } from "./confirmationModal";
 
 /**
  * Documenting custom data attributes for Folder and Bookmark HTML elements.
@@ -47,9 +52,6 @@ import "./index.css";
  * @typedef {"title" | "url"} SearchNodesBy
  */
 
-/** @type {Set<browser.Bookmarks.BookmarkTreeNode>} */
-const CHECKED_NODES = new Set();
-
 const elRootBookmarksList = document.getElementById("bookmarks-list");
 const elSortBookmarksSelect = document.getElementById("sort-bookmarks");
 const elOpenSelectedBookmarksButton = document.getElementById("open-selected-bookmarks");
@@ -66,6 +68,7 @@ async function initializeTree() {
 
 // Page loaded...
 document.addEventListener("DOMContentLoaded", async () => {
+  elRootBookmarksList.appendChild(createLoadingSpinner());
   await initializeTree();
 });
 
@@ -80,7 +83,7 @@ elOpenSelectedBookmarksButton.addEventListener("click", async () => {
     const currentTab = await browser.tabs.getCurrent();
     let tabIndex = currentTab.index + 1;
 
-    for (const checked of CHECKED_NODES) {
+    for (const checked of window.CHECKED_NODES) {
       if (checked.url) {
         const lazyUrl = browser.runtime.getURL("lazy-load.html#") + checked.url;
         browser.tabs.create({ url: lazyUrl, index: tabIndex, active: false });
@@ -98,11 +101,13 @@ elClearAllSelectedButton.addEventListener("click", () => {
   for (const checkbox of allCheckboxes) {
     checkbox.checked = false;
   }
-  CHECKED_NODES.clear();
+  window.CHECKED_NODES.clear();
 });
 
 // Search bookmarks
 elSearchBookmarksButton.addEventListener("click", async () => {
+  // Uncheck everything
+  elClearAllSelectedButton.click();
   const searchText = document.getElementById("open-many-tab-search-text")?.value;
   if (!searchText || searchText === "") {
     return await initializeTree();
@@ -131,6 +136,19 @@ elSearchBookmarksText.addEventListener("keyup", (event) => {
  * FUNCTIONS
  * ==============================================================================================================================
  */
+
+/**
+ * Allows us to wait for layout + next paint to occur.
+ * @returns {Promise<void>}
+ */
+async function waitForNextFrame() {
+  return new Promise((resolve) => {
+    // We have 2 `requestAnimationFrame` calls so we can wait for layout and paint.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve);
+    });
+  });
+}
 
 /**
  * Responsible for adding the BookmarkTreeNode to our global 'checked nodes' set.
@@ -169,12 +187,14 @@ function handleNodeCollapseOrExpand(node = null, childUList = null) {
       }
     } else {
       // Need to expand
-      renderRawNodes(node.children, childUList);
+      childUList.appendChild(createLoadingSpinner());
       childUList.classList.add("show");
       childUList.setAttribute("data-bmb-expanded", 1);
       if (spanAction) {
         spanAction.setAttribute("data-bmb-folder-icon-expanded", 1);
       }
+      // Wait for loading spinner to show first.
+      waitForNextFrame().then(() => renderRawNodes(node.children, childUList));
     }
   } catch (e) {
     console.error("[handleNodeCollapseOrExpand][Error]", { error: e, node });
@@ -213,7 +233,7 @@ function renderRawNodes(nodes, appendToElement) {
 
 /**
  * Generates HTML for bookmark type of BookmarkNode.
- * @param {BookmarkNode} node
+ * @param {browser.Bookmarks.BookmarkTreeNode} node
  * @returns {HTMLLIElement}
  */
 function generateBookmarkHTML(node) {
@@ -230,7 +250,84 @@ function generateBookmarkHTML(node) {
   const inputCheckbox = document.createElement("input");
   const labelForCheckbox = document.createElement("label");
   const aLink = document.createElement("a");
-  const spanAction = document.createElement("span");
+  const spanToggleExpand = document.createElement("span");
+  const actionsPanelRootDiv = document.createElement("div");
+  const actionButtonEdit = document.createElement("button");
+  const actionButtonEditIcon = document.createElement("i");
+  const actionButtonDelete = document.createElement("delete");
+  const actionButtonDeleteIcon = document.createElement("i");
+
+  actionsPanelRootDiv.classList.add("d-none", "ms-auto", "me-3", "d-flex", "flex-row", "gap-2");
+
+  actionButtonEditIcon.classList.add("bi", "bi-pencil");
+  actionButtonEdit.classList.add("btn", "btn-sm", "btn-primary", "p-0");
+  actionButtonEdit.style.height = "25px";
+  actionButtonEdit.style.width = "25px";
+  actionButtonEdit.addEventListener("click", () => {
+    const editBookmarkModal = createEditBookmarkModal({
+      url: node.url,
+      title: node.title,
+      onCancelButtonClick: () => {
+        editBookmarkModal.hide();
+      },
+      onSaveButtonClick: async ({ setAlert, originalTitle, originalUrl, updatedUrl, updatedTitle }) => {
+        try {
+          // If any changes were made we need to update the bookmark, as well as our results that are being displayed.
+          if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
+            const updatedNode = await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
+            setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
+            mainBookmarkLItem.replaceWith(generateBookmarkHTML(updatedNode));
+          }
+        } catch (e) {
+          setAlert({ alertMessage: "Error! Something went wrong!", alertType: "danger" });
+          console.error(`[BookmarkBlast][edit-bookmark-modal-save] Error saving bookmark!`, e);
+        }
+      },
+    });
+
+    if (editBookmarkModal) {
+      editBookmarkModal.show();
+    } else {
+      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while trying to display edit-bookmark-modal!`);
+    }
+  });
+
+  actionButtonDeleteIcon.classList.add("bi", "bi-trash");
+  actionButtonDelete.classList.add("btn", "btn-sm", "btn-danger", "p-0");
+  actionButtonDelete.style.height = "25px";
+  actionButtonDelete.style.width = "25px";
+  actionButtonDelete.addEventListener("click", () => {
+    const confirmationModal = createConfirmationModal({
+      title: "Confirmation",
+      okButtonText: "Yes",
+      closeButtonText: "No",
+      message: "Are you sure you want to delete this bookmark?\n\nThis action cannot be undone!",
+      onCancelButtonClick: (e) => {
+        confirmationModal.hide();
+      },
+      onOkButtonClick: async (e) => {
+        try {
+          await browser.bookmarks.remove(node.id);
+        } catch (e) {
+          console.log("[BookmarkBurst][manage][ERROR] Something went wrong while attempting to delete a bookmark!", { error: e, node });
+        } finally {
+          mainBookmarkLItem.remove();
+          confirmationModal.hide();
+        }
+      },
+    });
+
+    if (confirmationModal) {
+      confirmationModal.show();
+    } else {
+      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while trying to display confirmation-modal to delete bookmark!`);
+    }
+  });
+
+  actionButtonEdit.appendChild(actionButtonEditIcon);
+  actionButtonDelete.appendChild(actionButtonDeleteIcon);
+  actionsPanelRootDiv.appendChild(actionButtonDelete);
+  actionsPanelRootDiv.appendChild(actionButtonEdit);
 
   mainBookmarkLItem.classList.add("list-group-item", "word-break-all", "p-1", "ps-3");
   mainBookmarkLItem.id = node.id;
@@ -267,8 +364,8 @@ function generateBookmarkHTML(node) {
   aLink.target = "_blank";
   aLink.innerText = node.title;
 
-  spanAction.classList.add("me-3");
-  spanAction.textContent = String.fromCharCode(160);
+  spanToggleExpand.classList.add("me-3");
+  spanToggleExpand.textContent = String.fromCharCode(160);
 
   /** Event Handlers */
 
@@ -278,28 +375,31 @@ function generateBookmarkHTML(node) {
       return;
     }
     inputCheckbox.checked = !inputCheckbox.checked;
-    toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
+    toggleCheckedBookmarkTreeNode(node, window.CHECKED_NODES);
   });
 
   divBookmarkRootContainer.addEventListener("mouseover", function (event) {
     this.classList.add("bg-body-tertiary");
+    actionsPanelRootDiv.classList.remove("d-none");
   });
 
   divBookmarkRootContainer.addEventListener("mouseleave", function (event) {
     this.classList.remove("bg-body-tertiary");
+    actionsPanelRootDiv.classList.add("d-none");
   });
 
   inputCheckbox.addEventListener("change", (event) => {
     event.stopPropagation();
-    toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
+    toggleCheckedBookmarkTreeNode(node, window.CHECKED_NODES);
   });
 
   aLink.addEventListener("click", (event) => {
     event.stopPropagation();
   });
 
-  divBookmarkRootContainer.appendChild(spanAction);
+  divBookmarkRootContainer.appendChild(spanToggleExpand);
   divBookmarkRootContainer.appendChild(divFormCheck);
+  divBookmarkRootContainer.appendChild(actionsPanelRootDiv);
   labelForCheckbox.appendChild(aLink);
   divFormCheck.appendChild(inputCheckbox);
   divFormCheck.appendChild(labelForCheckbox);
@@ -310,7 +410,7 @@ function generateBookmarkHTML(node) {
 
 /**
  * Generates HTML for folder type of BookmarkNode
- * @param {any} node
+ * @param {browser.Bookmarks.BookmarkTreeNode} node
  * @returns {HTMLLIElement}
  */
 function generateFolderHTML(node) {
@@ -326,6 +426,7 @@ function generateFolderHTML(node) {
   const divFormCheck = document.createElement("div");
   const inputCheckbox = document.createElement("input");
   const labelForCheckbox = document.createElement("label");
+  const badgeNumberOfChildren = document.createElement("span");
   const spanAction = document.createElement("span");
   const strong = document.createElement("strong");
   const divChildrenContainer = document.createElement("div");
@@ -334,7 +435,7 @@ function generateFolderHTML(node) {
   mainFolderLItem.classList.add("list-group-item", "p-1", "ps-3");
   mainFolderLItem.id = `node-${node.id}`;
 
-  const liAttributes = {
+  const mainFolderLItemAttributes = {
     "data-bmb-id": node.id,
     "data-bmb-title": node.title,
     "data-bmb-date-added": node.dateAdded,
@@ -342,7 +443,9 @@ function generateFolderHTML(node) {
     "data-bmb-url": "",
   };
 
-  Object.entries(liAttributes).forEach(([key, val]) => mainFolderLItem.setAttribute(key, val));
+  Object.entries(mainFolderLItemAttributes).forEach(([key, val]) => {
+    mainFolderLItem.setAttribute(key, val);
+  });
 
   divRootContainer.classList.add("d-flex", "align-items-center");
 
@@ -364,7 +467,11 @@ function generateFolderHTML(node) {
   spanAction.role = "button";
   spanAction.setAttribute("data-bmb-folder-icon-expanded", 0);
 
-  strong.innerText = node.title || "<Unnamed Folder>";
+  strong.innerText = (node.title || "<Unnamed Folder>") + String.fromCharCode(160);
+
+  badgeNumberOfChildren.classList.add("badge", "text-bg-secondary", "p-1");
+  badgeNumberOfChildren.style.fontSize = "0.72rem";
+  badgeNumberOfChildren.innerText = node.children.length;
 
   divChildrenContainer.classList.add("collapse", "ms-2", "show");
 
@@ -404,7 +511,7 @@ function generateFolderHTML(node) {
   // When checkbox is changed.
   inputCheckbox.addEventListener("change", async (event) => {
     event.stopPropagation();
-    toggleCheckedBookmarkTreeNode(node, CHECKED_NODES);
+    toggleCheckedBookmarkTreeNode(node, window.CHECKED_NODES);
     // If a folder is checked, auto check it's children.
     // In order to make sure it has children to check, we need to expand it first (if it isn't already).
     if (!Boolean(parseInt(childrenUList.getAttribute("data-bmb-expanded")))) {
@@ -417,7 +524,7 @@ function generateFolderHTML(node) {
       }
       const childBookmarkTreeNode = await browser.bookmarks.get(child.dataset.bmbId);
       if (childBookmarkTreeNode) {
-        toggleCheckedBookmarkTreeNode(childBookmarkTreeNode, CHECKED_NODES);
+        toggleCheckedBookmarkTreeNode(childBookmarkTreeNode, window.CHECKED_NODES);
         const childCheckboxSelector = `#checkbox-${child.id}`;
         const elChildCheckbox = child.querySelector(childCheckboxSelector);
         // Set child bookmark check state to what the parent folder is.
@@ -430,6 +537,7 @@ function generateFolderHTML(node) {
 
   divChildrenContainer.appendChild(childrenUList);
   labelForCheckbox.appendChild(strong);
+  labelForCheckbox.appendChild(badgeNumberOfChildren);
   divFormCheck.appendChild(inputCheckbox);
   divFormCheck.appendChild(labelForCheckbox);
   divRootContainer.appendChild(spanAction);

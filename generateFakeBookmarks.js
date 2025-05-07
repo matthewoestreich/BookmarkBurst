@@ -2,37 +2,13 @@ import nodepath from "node:path";
 import nodefs from "node:fs";
 import { faker } from "@faker-js/faker";
 
-createFakeBookmarksFile(100, ".");
-
-function newFakeBookmarkFile(bookmarks) {
-  let bookmarksStr = "";
-  bookmarks.forEach((b) => (bookmarksStr += `\t\t\t\t\t\t${b}\n`));
-
-  return `
-<!DOCTYPE NETSCAPE-Bookmark-file-1>
-<!-- This is an automatically generated file.
-     It will be read and overwritten.
-     DO NOT EDIT! -->
-<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
-<meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'none'; img-src data: *; object-src 'none'"></meta>
-<TITLE>Bookmarks</TITLE>
-<H1>Bookmarks Menu</H1>
-
-<DL><p>
-    <DT><H3 ADD_DATE="1746027888" LAST_MODIFIED="1746465671">BookmarkBurst</H3>
-        <DL><p>
-${bookmarksStr}
-        </DL><p>
-</DL>
-`;
-}
+createFakeBookmarksFile("BookmarkBurst3", 2224, ".");
 
 function newFakeBookmark(url, dateAdded, dateModified, title) {
   return `<DT><A HREF="${url}" ADD_DATE="${dateAdded}" LAST_MODIFIED="${dateModified}">${title}</A>`;
 }
 
-function createFakeBookmarksFile(numberOfBookmarks = 10, savePathWithoutFileName) {
+function createFakeBookmarksFile(folderName, numberOfBookmarks = 10, savePathWithoutFileName) {
   const duplicateUrlsPool = [];
   const duplicateTitlesPool = [];
   for (let i = 0; i < Math.floor(numberOfBookmarks / 3); i++) {
@@ -78,7 +54,26 @@ function createFakeBookmarksFile(numberOfBookmarks = 10, savePathWithoutFileName
 
   const now = new Date();
   const filename = `fake_bookmarks_${now.getMonth()}_${now.getDate()}_${now.getFullYear()}_${now.getTime()}.html`;
-  const file = newFakeBookmarkFile(fakeBookmarks);
+  let bookmarksString = "";
+  fakeBookmarks.forEach((b) => (bookmarksString += `\t\t\t\t\t\t${b}\n`));
+  const file = `
+<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<!-- This is an automatically generated file.
+     It will be read and overwritten.
+     DO NOT EDIT! -->
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'none'; img-src data: *; object-src 'none'"></meta>
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks Menu</H1>
+
+<DL><p>
+    <DT><H3 ADD_DATE="1746027888" LAST_MODIFIED="1746465671">${folderName}</H3>
+        <DL><p>
+${bookmarksString}
+        </DL><p>
+</DL>
+`;
   const path = nodepath.resolve(import.meta.dirname, savePathWithoutFileName, filename);
   nodefs.writeFileSync(path, file, "utf-8");
 }

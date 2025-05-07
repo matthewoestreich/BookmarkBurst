@@ -6,9 +6,10 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
-import { sortRawNodes } from "./bookmarksTree.js";
+import { sortRawNodes } from "./manageBookmarks.js";
 import { createEditBookmarkModal } from "./editBookmarkModal.js";
 import { createConfirmationModal } from "./confirmationModal.js";
+import { createLoadingSpinner } from "./loadingSpinner.js";
 
 /**
  * @typedef {"title" | "url"} TargetType
@@ -47,7 +48,10 @@ const elFoundDuplicatesList = document.getElementById("duplicates-list");
 const elConfirmBookmarkDeletionCheckbox = document.getElementById("confirm-delete-bookmark");
 
 browser.bookmarks.onRemoved.addListener(async (id, removeInfo) => {
-  elFindDuplicatesButton.click();
+  // Only rerun duplicates search if the "Duplicates" tab is active.
+  if (document.getElementById("menu-tab-detect-duplicates")?.classList.contains("active")) {
+    elFindDuplicatesButton.click();
+  }
 });
 
 // Start finding duplicates
@@ -56,6 +60,9 @@ elFindDuplicatesButton.addEventListener("click", async () => {
   if (!findby) {
     return;
   }
+
+  // Add loading spinner
+  elFoundDuplicatesList.appendChild(createLoadingSpinner());
 
   const tree = await browser.bookmarks.getTree();
   const rootNode = tree[0];
@@ -98,7 +105,7 @@ elConfirmBookmarkDeletionCheckbox.addEventListener("click", (event) => {
   const confirmationModal = createConfirmationModal({
     title: "Important",
     message:
-      "Please note, this means you will not be asked to confirm bookmark deletion!! We are not responsible for any bookmarks that you accidentally delete!\nAre you sure?",
+      "Please note, this means you will not be asked to confirm bookmark deletion!!\n\nWe are not responsible for any bookmarks that you accidentally delete!\n\nAre you sure?",
     okButtonText: "Yes",
     closeButtonText: "No",
     onOkButtonClick: (ev) => {
@@ -268,7 +275,7 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
 
     const confirmationModal = createConfirmationModal({
       title: "Confirm Deletion",
-      message: "Are you sure you want to delete this bookmark?",
+      message: "Are you sure you want to delete this bookmark?\n\nThis action cannot be undone!",
       okButtonText: "Yes",
       closeButtonText: "No",
       onCancelButtonClick: () => {
@@ -310,7 +317,7 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
         try {
           // If any changes were made we need to update the bookmark, as well as our results that are being displayed.
           if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
-            await browser.bookmarks.update(id, { url: updatedUrl, title: updatedTitle });
+            await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
             setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
             // Rerun duplicate bookmark check to 'refresh' our duplicate results.
             // TODO: could prob just edit the HTML directly without having to rerun an expensive task.

@@ -6,7 +6,6 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
 const elEditBookmarkModal = document.getElementById("modal-edit-bookmark");
-const elEditBookmarkModalBookmarkData = document.getElementById("bookmark-data");
 const elEditBookmarkModalAlertMessage = document.getElementById("modal-edit-bookmark-alert");
 const elEditBookmarkModalSaveButton = document.getElementById("modal-edit-bookmark-save-button");
 const elEditBookmarkModalCancelButton = document.getElementById("modal-edit-bookmark-close-button");
@@ -29,18 +28,12 @@ const elEditBookmarkModalTitleInput = document.getElementById("modal-edit-bookma
  * @typedef {{
  *  title: string;
  *  url: string;
- *  id: string;
- *  targetType: "url" | "title";
  *  onSaveButtonClick: (callbackProps: EditBookmarkModalCallbackProperties) => any;
  *  onCancelButtonClick?: (callbackProps: EditBookmarkModalCallbackProperties) => any;
  * }} CreateEditBookmarkModalProperties
  */
 
 function clearModalData() {
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-id", "");
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-target-field", "");
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-url", "");
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-title", "");
   elEditBookmarkModalUrlInput.value = "";
   elEditBookmarkModalTitleInput.value = "";
   elEditBookmarkModalAlertMessage.setAttribute("class", "");
@@ -52,16 +45,12 @@ function clearModalData() {
  * @param {CreateEditBookmarkModalProperties} props
  */
 export function createEditBookmarkModal(props) {
-  const { title, url, id, targetType, onSaveButtonClick, onCancelButtonClick } = props;
+  const { title, url, onSaveButtonClick, onCancelButtonClick } = props;
 
   const bootstrapModalInstance = bootstrap.Modal.getOrCreateInstance(elEditBookmarkModal);
   const originalTitle = title;
   const originalUrl = url;
 
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-url", url);
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-title", title);
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-id", id);
-  elEditBookmarkModalBookmarkData.setAttribute("data-bookmark-target-field", targetType);
   elEditBookmarkModalUrlInput.value = url || "";
   elEditBookmarkModalTitleInput.value = title || "";
 

@@ -52,15 +52,6 @@
           </div>
           <div class="modal-body">
             <div id="modal-edit-bookmark-alert" class="alert" role="alert"></div>
-            <!-- Invisible element just to store the ID of the bookmark so we can access it later, slightly hacky -->
-            <div
-              id="bookmark-data"
-              style="display: none"
-              data-bookmark-id=""
-              data-bookmark-target-field=""
-              data-bookmark-title=""
-              data-bookmark-url=""
-            ></div>
             <div class="form-floating mb-3">
               <input id="modal-edit-bookmark-title" type="text" class="form-control" placeholder="Title" />
               <label for="modal-edit-bookmark-title">Title</label>
@@ -123,7 +114,7 @@
         <!-- Horizontal Menu (Nav) -->
         <ul class="nav nav-pills nav-tabs nav-fill m-4 d-flex flex-row flex-nowrap" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="menu-tab-open-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">
+            <button class="nav-link active" id="menu-tab-manage-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-open-bookmarks" role="tab">
               Manage
             </button>
           </li>
@@ -208,10 +199,12 @@
                   <input id="confirm-delete-bookmark" class="form-check-input" type="checkbox" value="" checked="true" />
                   <label class="form-check-label" for="confirm-delete-bookmark"> Confirm Bookmark Deletion </label>
                 </div>
+                <!--
                 <div class="form-check">
                   <input id="bulk-deletion-mode-checkbox" class="form-check-input" type="checkbox" value="" />
                   <label class="form-check-label" for="bulk-deletion-mode-checkbox"> Bulk Deletion Mode </label>
                 </div>
+                -->
               </div>
             </div>
             <div class="row mt-4">
@@ -249,8 +242,9 @@
         </div>
       </div>
     </div>
+    <script type="module" src="./src/content/index.js"></script>
     <script type="module" src="./src/content/theme.js"></script>
-    <script type="module" src="./src/content/bookmarksTree.js"></script>
+    <script type="module" src="./src/content/manageBookmarks.js"></script>
     <script type="module" src="./src/content/findDuplicates.js"></script>
   </body>
 </html>
