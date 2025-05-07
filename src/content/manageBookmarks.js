@@ -467,9 +467,9 @@ function generateFolderHTML(node) {
   spanAction.role = "button";
   spanAction.setAttribute("data-bmb-folder-icon-expanded", 0);
 
-  strong.innerText = (node.title || "<Unnamed Folder>") + String.fromCharCode(160);
+  strong.innerText = (node.title || "<Unnamed Folder>") + String.fromCharCode(160).repeat(3);
 
-  badgeNumberOfChildren.classList.add("badge", "text-bg-secondary", "p-1");
+  badgeNumberOfChildren.classList.add("badge", "text-bg-primary", "p-1");
   badgeNumberOfChildren.style.fontSize = "0.72rem";
   badgeNumberOfChildren.innerText = node.children.length;
 
