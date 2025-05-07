@@ -308,10 +308,10 @@ function generateBookmarkHTML(node) {
       onOkButtonClick: async (e) => {
         try {
           await browser.bookmarks.remove(node.id);
+          mainBookmarkLItem.remove();
         } catch (e) {
           console.log("[BookmarkBurst][manage][ERROR] Something went wrong while attempting to delete a bookmark!", { error: e, node });
         } finally {
-          mainBookmarkLItem.remove();
           confirmationModal.hide();
         }
       },
