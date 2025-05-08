@@ -2,7 +2,7 @@
 <img src="./.github/img/BookmarkBurstBanner.png" alt="Bookmark Burst">
 </p>
 <h4 align="center">Browser Extension for Various Bookmark Related Tasks</h4>
-<p align="center">Download for <a href="https://addons.mozilla.org/en-US/firefox/addon/bookmarkburst/">Firefox</a></p>
+<p align="center">Download for <a href="https://addons.mozilla.org/firefox/addon/bookmarkburst/">Firefox</a></p>
 
 ---
 
@@ -61,7 +61,7 @@ Search your bookmarks for duplicate Titles and URLs!
       <td>No</td>
       <td>These permissions are used for finding broken bookmarks. Specifically, to send requests to each of your bookmarks to test the websites response.</td>
       <td>
-      <a href="https://support.mozilla.org/en-US/kb/permission-request-messages-firefox-extensions?as=u&utm_source=inproduct#w_access-your-data-for-all-websites">Firefox</a> & <a href="https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions#host-permissions">Chrome</a>.
+      <a href="https://support.mozilla.org/en-US/kb/permission-request-messages-firefox-extensions?as=u#w_access-your-data-for-all-websites">Firefox</a> & <a href="https://developer.chrome.com/docs/extensions/develop/concepts/declare-permissions#host-permissions">Chrome</a>.
       <br/>You will be prompted for these permissions upon browsing to the <code>Find Broken Bookmarks</code> feature. <br/>If you do not wish to use the <code>Find Broken Bookmarks</code> feature, you can deny these permissions when prompted.
       </td>
     </tr>
