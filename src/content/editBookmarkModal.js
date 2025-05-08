@@ -13,7 +13,7 @@ const elEditBookmarkModalUrlInput = document.getElementById("modal-edit-bookmark
 const elEditBookmarkModalTitleInput = document.getElementById("modal-edit-bookmark-title");
 
 /**
- *  @typedef {"danger" | "success"} AlertType
+ * @typedef {"danger" | "success"} AlertType
  * @typedef {{ alertType: AlertType, alertMessage: string }} SetAlertProperties
  *
  * @typedef {{
@@ -33,10 +33,14 @@ const elEditBookmarkModalTitleInput = document.getElementById("modal-edit-bookma
  * }} CreateEditBookmarkModalProperties
  */
 
+/**
+ * Reset modal form
+ */
 function clearModalData() {
   elEditBookmarkModalUrlInput.value = "";
   elEditBookmarkModalTitleInput.value = "";
-  elEditBookmarkModalAlertMessage.setAttribute("class", "");
+  // Just remove both success and danger, even though only one should exist.
+  elEditBookmarkModalAlertMessage.classList.remove("alert-danger", "alert-success");
   elEditBookmarkModalAlertMessage.innerText = "";
 }
 
@@ -54,9 +58,6 @@ export function createEditBookmarkModal(props) {
   elEditBookmarkModalUrlInput.value = url || "";
   elEditBookmarkModalTitleInput.value = title || "";
 
-  /**
-   * @param {SetAlertProperties} props
-   */
   function setAlert(props) {
     elEditBookmarkModalAlertMessage.classList.add(`alert-${props.alertType}`);
     elEditBookmarkModalAlertMessage.innerText = props.alertMessage;
