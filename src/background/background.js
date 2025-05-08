@@ -9,7 +9,7 @@ bookmarkBurst.onActionClick(() => {
 });
 
 bookmarkBurst.onPermissionsGranted((permissions) => {
-  console.log(`Permissions granted!`, { permissions });
+  console.info(`Permissions granted!`, { permissions });
 });
 
 bookmarkBurst.onPermissionsRemoved((permissions) => {
@@ -18,9 +18,7 @@ bookmarkBurst.onPermissionsRemoved((permissions) => {
 
 bookmarkBurst.onMessage("detect-dead-bookmarks", async (msg, sender, response) => {
   const { bookmarks, timeout } = msg;
-  console.log({ bookmarks });
   for (const bmark of bookmarks) {
   }
-
   response(true);
 });

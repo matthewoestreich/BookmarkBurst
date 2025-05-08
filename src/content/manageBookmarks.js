@@ -77,32 +77,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Overview of selected items
 elReviewSelectedBookmarksButton.addEventListener("click", () => {
   elModalReviewSelectedBookmarks.replaceChildren();
+  // Have to tally selected bookmarks instead of `window.CHECKED_NODES.size` because we need to
+  // exclude folders. `window.CHECKED_NODES.size` would include folders.
+  let totalSelectedBookmarks = 0;
+
   for (const checked of window.CHECKED_NODES) {
     if (!checked.url) {
       continue;
     }
-    const li = document.createElement("li");
-    li.classList.add("list-group-item");
+    totalSelectedBookmarks++;
+    const liHTML = generateReviewCheckedNodesDetailsHTML(checked);
+    elModalReviewSelectedBookmarks.appendChild(liHTML);
+  }
 
-    const boldTitle = document.createElement("b");
-    boldTitle.innerText = "Title: ";
-    li.appendChild(boldTitle);
-
-    const pTitle = document.createElement("p");
-    pTitle.classList.add("m-0");
-    pTitle.innerText = checked.title;
-    li.appendChild(pTitle);
-
-    const boldUrl = document.createElement("b");
-    boldUrl.innerText = "URL: ";
-    li.appendChild(boldUrl);
-
-    const pUrl = document.createElement("p");
-    pUrl.classList.add("m-0");
-    pUrl.innerText = checked.url;
-    li.appendChild(pUrl);
-
-    elModalReviewSelectedBookmarks.appendChild(li);
+  const elSelectedBookmarksCount = document.getElementById("modal-view-selected-bookmarks-title");
+  if (elSelectedBookmarksCount) {
+    elSelectedBookmarksCount.innerText = `${totalSelectedBookmarks} Selected Bookmark(s)`;
   }
 });
 
@@ -204,8 +194,9 @@ function toggleCheckedBookmarkTreeNode(node, checkedNodesSet) {
  * @param {browser.Bookmarks.BookmarkTreeNode} node
  * @param {HTMLUListElement} childUList
  * @param {SortNodesBy} sortBy
+ * @returns {Promise<void>}
  */
-function handleNodeCollapseOrExpand(node = null, childUList = null) {
+async function handleNodeCollapseOrExpand(node = null, childUList = null) {
   try {
     // So we can set the expanded or not value on the icon, so that CSS can rotate it (or not).
     const spanAction = childUList.closest("li")?.querySelector("span[data-bmb-folder-icon-expanded]");
@@ -228,10 +219,13 @@ function handleNodeCollapseOrExpand(node = null, childUList = null) {
         spanAction.setAttribute("data-bmb-folder-icon-expanded", 1);
       }
       // Wait for loading spinner to show first.
-      waitForNextFrame().then(() => renderRawNodes(node.children, childUList));
+      await waitForNextFrame();
+      renderRawNodes(node.children, childUList);
+      return Promise.resolve();
     }
   } catch (e) {
     console.error("[handleNodeCollapseOrExpand][Error]", { error: e, node });
+    return Promise.reject(e);
   }
 }
 
@@ -546,25 +540,22 @@ function generateFolderHTML(node) {
   inputCheckbox.addEventListener("change", async (event) => {
     event.stopPropagation();
     toggleCheckedBookmarkTreeNode(node, window.CHECKED_NODES);
-    // If a folder is checked, auto check it's children.
-    // In order to make sure it has children to check, we need to expand it first (if it isn't already).
-    if (!Boolean(parseInt(childrenUList.getAttribute("data-bmb-expanded")))) {
-      handleNodeCollapseOrExpand(node, childrenUList);
+    if (!node.children?.length) {
+      return;
     }
-    for (const child of Array.from(childrenUList.childNodes)) {
+    if (!Boolean(parseInt(childrenUList.getAttribute("data-bmb-expanded")))) {
+      await handleNodeCollapseOrExpand(node, childrenUList);
+    }
+    for (const child of node.children) {
       // Don't check child folders
-      if (child.dataset.bmbType === "folder") {
+      if (!child.url) {
         continue;
       }
-      const childBookmarkTreeNode = await browser.bookmarks.get(child.dataset.bmbId);
-      if (childBookmarkTreeNode) {
-        toggleCheckedBookmarkTreeNode(childBookmarkTreeNode, window.CHECKED_NODES);
-        const childCheckboxSelector = `#checkbox-${child.id}`;
-        const elChildCheckbox = child.querySelector(childCheckboxSelector);
-        // Set child bookmark check state to what the parent folder is.
-        if (elChildCheckbox) {
-          elChildCheckbox.checked = inputCheckbox.checked;
-        }
+      toggleCheckedBookmarkTreeNode(child, window.CHECKED_NODES);
+      const childCheckboxSelector = `#checkbox-${child.id}`;
+      const elChildCheckbox = document.querySelector(childCheckboxSelector);
+      if (elChildCheckbox) {
+        elChildCheckbox.checked = inputCheckbox.checked;
       }
     }
   });
@@ -580,6 +571,49 @@ function generateFolderHTML(node) {
   mainFolderLItem.appendChild(divChildrenContainer);
 
   return mainFolderLItem;
+}
+
+/**
+ * For generating each element in the Review Selected modal list.
+ * @param {browser.Bookmarks.BookmarkTreeNode} node
+ * @returns {HTMLLIElement}
+ */
+function generateReviewCheckedNodesDetailsHTML(node) {
+  const rootLItem = document.createElement("li");
+  rootLItem.classList.add("list-group-item");
+
+  const containerUList = document.createElement("ul");
+  containerUList.classList.add("list-group", "small");
+
+  const titleLItem = document.createElement("li");
+  titleLItem.classList.add("list-group-item", "d-flex", "flex-row", "border-0", "m-0", "p-0");
+
+  const boldTitle = document.createElement("b");
+  boldTitle.innerText = "Title: ";
+  titleLItem.appendChild(boldTitle);
+
+  const pTitle = document.createElement("p");
+  pTitle.classList.add("m-0", "word-break-all");
+  pTitle.innerText = String.fromCharCode(160) + node.title;
+  titleLItem.appendChild(pTitle);
+
+  const urlLItem = document.createElement("li");
+  urlLItem.classList.add("list-group-item", "d-flex", "flex-row", "border-0", "m-0", "p-0");
+
+  const boldUrl = document.createElement("b");
+  boldUrl.innerText = "URL: ";
+  urlLItem.appendChild(boldUrl);
+
+  const pUrl = document.createElement("p");
+  pUrl.classList.add("m-0", "word-break-all");
+  pUrl.innerText = String.fromCharCode(160) + node.url;
+  urlLItem.appendChild(pUrl);
+
+  containerUList.appendChild(titleLItem);
+  containerUList.appendChild(urlLItem);
+  rootLItem.appendChild(containerUList);
+
+  return rootLItem;
 }
 
 /**

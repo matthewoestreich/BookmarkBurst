@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 /** @type {Set<browser.Bookmarks.BookmarkTreeNode>} */
 window.CHECKED_NODES = new Set();
 
@@ -34,7 +36,6 @@ function collapseAll() {
       checkedInput.checked = false;
     }
   }
-  console.log(window.CHECKED_NODES.size);
   window.CHECKED_NODES.clear();
 }
 
