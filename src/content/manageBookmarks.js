@@ -58,6 +58,8 @@ const elOpenSelectedBookmarksButton = document.getElementById("open-selected-boo
 const elClearAllSelectedButton = document.getElementById("clear-all-selected");
 const elSearchBookmarksText = document.getElementById("open-many-tab-search-text");
 const elSearchBookmarksButton = document.getElementById("open-many-tab-start-search");
+const elReviewSelectedBookmarksButton = document.getElementById("open-modal-view-selected-bookmarks");
+const elModalReviewSelectedBookmarks = document.getElementById("list-modal-view-selected-bookmarks");
 
 // Making an exception and putting this function here instead of in the FUNCTIONS section
 async function initializeTree() {
@@ -70,6 +72,38 @@ async function initializeTree() {
 document.addEventListener("DOMContentLoaded", async () => {
   elRootBookmarksList.appendChild(createLoadingSpinner());
   await initializeTree();
+});
+
+// Overview of selected items
+elReviewSelectedBookmarksButton.addEventListener("click", () => {
+  elModalReviewSelectedBookmarks.replaceChildren();
+  for (const checked of window.CHECKED_NODES) {
+    if (!checked.url) {
+      continue;
+    }
+    const li = document.createElement("li");
+    li.classList.add("list-group-item");
+
+    const boldTitle = document.createElement("b");
+    boldTitle.innerText = "Title: ";
+    li.appendChild(boldTitle);
+
+    const pTitle = document.createElement("p");
+    pTitle.classList.add("m-0");
+    pTitle.innerText = checked.title;
+    li.appendChild(pTitle);
+
+    const boldUrl = document.createElement("b");
+    boldUrl.innerText = "URL: ";
+    li.appendChild(boldUrl);
+
+    const pUrl = document.createElement("p");
+    pUrl.classList.add("m-0");
+    pUrl.innerText = checked.url;
+    li.appendChild(pUrl);
+
+    elModalReviewSelectedBookmarks.appendChild(li);
+  }
 });
 
 // The "select" element for sorting bookmarks
@@ -601,27 +635,41 @@ export function sortRawNodes(nodes, sortBy) {
 export function sortHTMLNodes(parentElement, sortBy) {
   const children = Array.from(parentElement.childNodes);
 
-  children.sort((a, b) => {
+  /**
+   * @param {HTMLElement} a
+   * @param {HTMLElement} b
+   * @returns
+   */
+  const sortByFoldersFirst = (a, b) => {
     const aIsFolder = a.dataset.bmbType === "folder";
     const bIsFolder = b.dataset.bmbType === "folder";
 
-    if (sortBy === "Folders First") {
-      if (aIsFolder && !bIsFolder) {
-        return -1;
+    if (aIsFolder && !bIsFolder) {
+      return -1;
+    }
+    if (!aIsFolder && bIsFolder) {
+      return 1;
+    }
+    return a.dataset.bmbTitle.localeCompare(b.dataset.bmbTitle);
+  };
+
+  children.sort((a, b) => {
+    switch (sortBy) {
+      case "Folders First": {
+        return sortByFoldersFirst(a, b);
       }
-      if (!aIsFolder && bIsFolder) {
-        return 1;
+      case "Date Added Newest First": {
+        return (+b.dataset.bmbDateAdded || 0) - (+a.dataset.bmbDateAdded || 0);
       }
-      return a.dataset.bmbTitle.localeCompare(b.dataset.bmbTitle);
-    }
-    if (sortBy === "Date Added Newest First") {
-      return (+b.dataset.bmbDateAdded || 0) - (+a.dataset.bmbDateAdded || 0);
-    }
-    if (sortBy === "Date Added Newest Last") {
-      return (+a.dataset.bmbDateAdded || 0) - (+b.dataset.bmbDateAdded || 0);
-    }
-    if (sortBy === "Alphabetical") {
-      return (a.dataset.bmbTitle || "").localeCompare(b.dataset.bmbTitle || "");
+      case "Date Added Newest Last": {
+        return (+a.dataset.bmbDateAdded || 0) - (+b.dataset.bmbDateAdded || 0);
+      }
+      case "Alphabetical": {
+        return (a.dataset.bmbTitle || "").localeCompare(b.dataset.bmbTitle || "");
+      }
+      default: {
+        return sortByFoldersFirst(a, b);
+      }
     }
   });
 
