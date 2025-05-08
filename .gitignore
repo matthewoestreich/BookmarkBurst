@@ -1,6 +1,7 @@
 .DS_Store
 fake_bookmarks_*.*
 FIREFOX.md
+chrome_packed
 
 # Logs
 logs

@@ -14,6 +14,7 @@
 - [Open Multiple Bookmarks at Once](#open-multiple-bookmarks-at-once)
   - In order to save compute resources, new tabs are lazy-loaded
   - This means websites are not fully loaded until you select the tab!
+- [Fuzzy search](https://en.wikipedia.org/wiki/Approximate_string_matching) bookmarks using [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance), by URL or Title, to help you find what you're looking for!
 - [Find Duplicate Bookmarks By Title or URL](#find-duplicate-bookmarks-by-title-or-url)
 
 ### Themes

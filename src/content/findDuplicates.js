@@ -6,53 +6,21 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
-import { sortRawNodes } from "./manageBookmarks.js";
-import { createEditBookmarkModal } from "./editBookmarkModal.js";
-import { createConfirmationModal } from "./confirmationModal.js";
-import { createLoadingSpinner } from "./loadingSpinner.js";
+import { findAllBookmarks, sortRawNodes, BookmarkTreeNodeExtended } from "./utils.js";
+import { createEditBookmarkModal } from "./components/editBookmarkModal.js";
+import { createConfirmationModal } from "./components/confirmationModal.js";
+import { createLoadingSpinner } from "./components/loadingSpinner.js";
 
 /**
  * @typedef {"title" | "url"} TargetType
  * @typedef {"Folders First" | "Date Added Newest First" | "Date Added Newest Last" | "Alphabetical"} SortNodesBy
  */
 
-/**
- * @implements {browser.Bookmarks.BookmarkTreeNode}
- */
-class BookmarkTreeNodeExtended {
-  path = [];
-
-  /**
-   * BookmarkNode is our internal symbolic representation of the builtin type  `bookmarks.BookmarkTreeNode`.
-   * @param {bookmarks.BookmarkTreeNode} node
-   * @param {boolean} checked
-   * @param {boolean} collapsed
-   * @param {BookmarkNode[]} children
-   */
-  constructor(node, checked = false, collapsed = true, children = []) {
-    this.id = node.id;
-    this.title = node.title;
-    this.url = node.url;
-    this.checked = checked;
-    this.collapsed = collapsed;
-    this.dateAdded = node.dateAdded;
-    this.unmodifiable = node.unmodifiable;
-    this.children = children;
-  }
-}
-
 const elFindDuplicatesButton = document.getElementById("start-find-duplicates");
 const elFindDuplicatesBySelect = document.getElementById("find-duplicates-by");
 const elFindDuplicatesStatusLabel = document.getElementById("number-of-duplicates-found");
 const elFoundDuplicatesList = document.getElementById("duplicates-list");
 const elConfirmBookmarkDeletionCheckbox = document.getElementById("confirm-delete-bookmark");
-
-browser.bookmarks.onRemoved.addListener(async (id, removeInfo) => {
-  // Only rerun duplicates search if the "Duplicates" tab is active.
-  if (document.getElementById("menu-tab-detect-duplicates")?.classList.contains("active")) {
-    elFindDuplicatesButton.click();
-  }
-});
 
 // Start finding duplicates
 elFindDuplicatesButton.addEventListener("click", async () => {
@@ -73,11 +41,11 @@ elFindDuplicatesButton.addEventListener("click", async () => {
   const duplicateEntriesLength = duplicateEntries.length;
 
   if (!duplicateEntriesLength) {
-    elFindDuplicatesStatusLabel.innerText = `No duplicates found!`;
+    elFindDuplicatesStatusLabel.innerText = `No duplicates found`;
     return;
   }
 
-  elFindDuplicatesStatusLabel.innerText = `${duplicateEntriesLength} duplicate${duplicateEntriesLength > 1 ? "s" : ""} found!`;
+  elFindDuplicatesStatusLabel.innerText = `${duplicateEntriesLength} duplicate${duplicateEntriesLength > 1 ? "s" : ""} found`;
   elFoundDuplicatesList.replaceChildren();
 
   for (const [target, nodes] of duplicateEntries) {
@@ -138,29 +106,6 @@ function sortRawNodesRecursively(nodes, sortBy) {
       sortRawNodesRecursively(node.children, sortBy);
     }
   }
-}
-
-/**
- * Recursively finds all bookmarks.
- * @param {browser.Bookmarks.BookmarkTreeNode[] | BookmarkTreeNodeExtended[]} nodes
- * @param {string[]} currentPath : typically not to be used by caller, we use it to track current path.
- * @returns {BookmarkTreeNodeExtended[]}
- */
-function findAllBookmarks(nodes, currentPath = []) {
-  const output = [];
-  for (const node of nodes) {
-    if (!node.url) {
-      if (node.children?.length) {
-        const childBookmarks = findAllBookmarks(node.children, [...currentPath, node.title]);
-        output.push(...childBookmarks);
-      }
-    }
-    if (node.url) {
-      node.path = [...currentPath, node.title];
-      output.push(node);
-    }
-  }
-  return output;
 }
 
 /**

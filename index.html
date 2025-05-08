@@ -124,14 +124,7 @@
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button
-              disabled
-              class="nav-link"
-              id="menu-tab-detect-dead-bookmarks"
-              data-bs-toggle="tab"
-              data-bs-target="#pane-detect-dead-bookmarks"
-              role="tab"
-            >
+            <button class="nav-link" id="menu-tab-detect-dead-bookmarks" data-bs-toggle="tab" data-bs-target="#pane-detect-dead-bookmarks" role="tab">
               Broken
             </button>
           </li>
@@ -142,7 +135,7 @@
             <!--<h3>Open Multiple Bookmarks</h3>-->
             <p>
               Manage bookmarks, open multiple bookmarks, etc...<br />To open multiple at once, select which bookmarks you would like to open, then
-              click "Open Selected"
+              click "Open Selected".<br /><br /><b>Note: if you have a lot of bookmarks in a single folder (2,000+) please be patient!</b>
             </p>
             <div class="row mt-5">
               <div class="col-sm-4 col-md-4 col-lg-2 mx-auto mx-lg-0 mb-1 d-lg-flex justify-content-lg-start">
@@ -188,7 +181,7 @@
             <!--<h3>Find Duplicate Bookmarks</h3>-->
             <p>
               Find duplicate bookmarks by title or URL.<br />After the search is complete, you will be presented with the option to delete
-              duplicates.<br /><b>Note: we ignore duplicate folder names!</b>
+              duplicates.<br /><br /><b>Note: we ignore duplicate folder names!</b>
             </p>
             <div class="row mt-5">
               <div class="col-12 col-lg-4 offset-lg-2 col-md-6">
@@ -224,25 +217,34 @@
           </div>
           <div class="tab-pane" id="pane-detect-dead-bookmarks" role="tabpanel" tabindex="0">
             <!--<h3>Find Broken Bookmarks</h3>-->
-            <p>Find broken bookmarks. <b>Note: depending on how many bookmarks you have, this may take a little!</b></p>
-            <div class="row">
-              <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
-                <button id="start-detect-dead-bookmarks" class="btn btn-primary">Find Dead Bookmarks</button>
+            <p>
+              Find broken bookmarks.<br />Request timeout : the greater the timeout, the more time the website has to respond, resulting in fewer
+              false positives but possibly longer overall runtime.<br /><br /><b
+                >Note: depending on how many bookmarks you have, this may take a little!</b
+              >
+            </p>
+            <div class="row mt-5">
+              <div class="col-md-4"></div>
+              <div class="col-md-4">
+                <label for="find-dead-bookmarks-timeout" class="small">Request Timeout (in seconds):</label>
+                <select id="find-dead-bookmarks-timeout" class="form-select form-select-sm">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5" selected>5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
               </div>
+              <div class="col-md-4"></div>
             </div>
-            <div class="row">
+            <div class="row mt-4">
               <div class="col-12 col-lg-4 offset-lg-4 col-md-6 offset-md-3">
-                <div
-                  id="detect-dead-bookmarks-progress-bar"
-                  class="progress d-none"
-                  role="progressbar"
-                  aria-label="Basic example"
-                  aria-valuenow="0"
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                >
-                  <div class="progress-bar" style="width: 0%"></div>
-                </div>
+                <button id="start-detect-dead-bookmarks" class="btn btn-primary">Find Broken Bookmarks</button>
               </div>
             </div>
           </div>
@@ -253,5 +255,7 @@
     <script type="module" src="./src/content/theme.js"></script>
     <script type="module" src="./src/content/manageBookmarks.js"></script>
     <script type="module" src="./src/content/findDuplicates.js"></script>
+    <script type="module" src="./src/content/findBroken.js"></script>
+    <script type="module" src="./src/content/browserEvents.js"></script>
   </body>
 </html>

@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.min.css";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
-import "./index.css";
+import "../index.css";
 
 /**
  * Creates HTML for loading spinner

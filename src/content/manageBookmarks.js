@@ -7,9 +7,10 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "./index.css";
 
-import { createLoadingSpinner } from "./loadingSpinner";
-import { createEditBookmarkModal } from "./editBookmarkModal";
-import { createConfirmationModal } from "./confirmationModal";
+import { sortRawNodes } from "./utils.js";
+import { createLoadingSpinner } from "./components/loadingSpinner";
+import { createEditBookmarkModal } from "./components/editBookmarkModal";
+import { createConfirmationModal } from "./components/confirmationModal";
 
 /**
  * Documenting custom data attributes for Folder and Bookmark HTML elements.
@@ -621,45 +622,6 @@ function generateReviewCheckedNodesDetailsHTML(node) {
  * FUNCTIONS : Sorting Related
  * ==============================================================================================================================
  */
-
-/**
- * Parses and sorts raw BookmarkTreeNode[]
- * @param {browser.Bookmarks.BookmarkTreeNode[]} nodes
- * @param {SortNodesBy} sortBy
- */
-export function sortRawNodes(nodes, sortBy) {
-  switch (sortBy) {
-    case "Folders First": {
-      nodes.sort((a, b) => {
-        const aIsFolder = !a.url;
-        const bIsFolder = !b.url;
-        if (aIsFolder && !bIsFolder) {
-          return -1;
-        }
-        if (!aIsFolder && bIsFolder) {
-          return 1;
-        }
-        return (a.title || "").localeCompare(b.title || "");
-      });
-      break;
-    }
-    case "Date Added Newest First": {
-      nodes.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-      break;
-    }
-    case "Date Added Newest Last": {
-      nodes.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
-      break;
-    }
-    case "Alphabetical": {
-      nodes.sort((a, b) => (a.title || "").localeCompare(b.title || ""));
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-}
 
 /**
  * Parses already rendered HTML nodes and sorts them.
