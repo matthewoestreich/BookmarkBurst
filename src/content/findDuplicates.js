@@ -1,3 +1,26 @@
+/**
+ * Documenting the attributes used within duplicate bookmarks "editing card"/bookmark details.
+ *
+ *  "data-bmb-title-for":
+ *    So we can easily find the element that is displaying the title for "this" BookmarkTreeNode. The value of this attributes is the node ID.
+ *
+ *  "data-bmb-url-for":
+ *    So we can easily find the element that is displaying the url for "this" BookmarkTreeNode. The value of this attributes is the node ID.
+ *
+ *  "data-bmb-path-for":
+ *    So we can easily find the element that is displaying the path for "this" BookmarkTreeNode. The value of this attributes is the node ID.
+ *
+ *  "data-bmb-duplicate-for"
+ *    The list group that holds each duplicates details. This is the details nested within the main card for this set of duplicates.
+ *    The value of this attribute will either be the literal URL or Title.
+ *    for "this" set of duplicates. We use this to query for how many duplicate bookmarks there are.
+ *
+ *  "data-bmb-card-for"
+ *    The main card that holds all of the details for each duplicate node. This is the overall container that lists each duplicate.
+ *
+ *  "data-bmb-card-title-for"
+ *    The 'root' card title for this set of duplicates.
+ */
 import browser from "webextension-polyfill";
 import * as bootstrap from "bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -35,17 +58,18 @@ elFindDuplicatesButton.addEventListener("click", async () => {
   const tree = await browser.bookmarks.getTree();
   const rootNode = tree[0];
   const nodes = rootNode.children;
+
   sortRawNodesRecursively(nodes, "Alphabetical");
+
   const duplicates = findDuplicateBookmarksBy(nodes, findby);
   const duplicateEntries = Object.entries(duplicates);
-  const duplicateEntriesLength = duplicateEntries.length;
 
-  if (!duplicateEntriesLength) {
+  if (!duplicateEntries.length) {
     elFindDuplicatesStatusLabel.innerText = `No duplicates found`;
     return;
   }
 
-  elFindDuplicatesStatusLabel.innerText = `${duplicateEntriesLength} duplicate${duplicateEntriesLength > 1 ? "s" : ""} found`;
+  elFindDuplicatesStatusLabel.innerText = `${duplicateEntries.length} duplicate${duplicateEntries.length > 1 ? "s" : ""} found`;
   elFoundDuplicatesList.replaceChildren();
 
   for (const [target, nodes] of duplicateEntries) {
@@ -135,7 +159,7 @@ function findDuplicateBookmarksBy(nodes, findBy) {
 }
 
 /**
- * Generaetes HTML for duplicate bookmarks.
+ * Generaetes HTML for duplicate bookmarks "review"/"edit"/"details" (whatever you want to call it) card.
  * @param {BookmarkTreeNodeExtended[]} nodes : an array of the duplicates
  * @param {TargetType} targetType : either "url" or "title"
  */
@@ -149,24 +173,31 @@ function generateDuplicateBookmarksHTML(nodes, targetType) {
   }
 
   const card = document.createElement("div");
+  const cardBody = document.createElement("div");
+  const cardTitle = document.createElement("div");
+  const cardSubTitle = document.createElement("p");
+  const duplicatesListContainer = document.createElement("div");
+  const duplicatesList = document.createElement("ul");
+
   card.classList.add("card", "m-2");
   card.style.height = "320px";
+  card.setAttribute("data-bmb-card-for", targetType === "title" ? nodes[0]?.title : nodes[0]?.url);
 
-  const cardBody = document.createElement("div");
   cardBody.classList.add("card-body", "d-flex", "flex-column", "overflow-scroll");
 
-  const cardTitle = document.createElement("div");
   cardTitle.classList.add("card-title");
 
-  const cardSubTitle = document.createElement("p");
   cardSubTitle.classList.add("small", "mb-1");
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
   cardSubTitle.innerText = `${nodes.length} Duplicate ${targetType === "url" ? "URL" : "Title"}s Found`;
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  cardSubTitle.setAttribute("data-bmb-card-title-for", targetType === "title" ? nodes[0]?.title : nodes[0]?.url);
 
-  const duplicatesListContainer = document.createElement("div");
   duplicatesListContainer.classList.add("flex-grow-1", "d-flex", "flex-column", "justify-content-center");
 
-  const duplicatesList = document.createElement("ul");
   duplicatesList.classList.add("list-group");
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  duplicatesList.setAttribute("data-bmb-duplicate-for", targetType === "title" ? nodes[0]?.title : nodes[0]?.url);
 
   duplicatesListContainer.appendChild(duplicatesList);
   cardTitle.appendChild(cardSubTitle);
@@ -174,8 +205,7 @@ function generateDuplicateBookmarksHTML(nodes, targetType) {
   cardBody.appendChild(duplicatesListContainer);
 
   for (const node of nodes) {
-    const duplicateListItem = generateDuplicateBookmarkDetailsHTML(node, targetType);
-    duplicatesList.appendChild(duplicateListItem);
+    duplicatesList.appendChild(generateDuplicateBookmarkDetailsHTML(node, targetType));
   }
 
   card.appendChild(cardBody);
@@ -183,7 +213,7 @@ function generateDuplicateBookmarksHTML(nodes, targetType) {
 }
 
 /**
- *
+ * Generates the details view for a bookmark. Includes "title", "url", and "path", along with edit/delete buttons.
  * @param {BookmarkTreeNodeExtended} node
  * @param {TargetType} targetType
  */
@@ -209,6 +239,61 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
 
   deleteButton.classList.add("btn", "btn-danger", "btn-sm", "ms-1");
   deleteButton.disabled = !!node.unmodifiable;
+
+  deleteIcon.classList.add("bi", "bi-trash");
+
+  deleteButton.appendChild(deleteIcon);
+
+  editButton.classList.add("btn", "btn-primary", "ms-auto", "btn-sm");
+  editButton.disabled = !!node.unmodifiable;
+
+  editIcon.classList.add("bi", "bi-pencil");
+
+  editButton.appendChild(editIcon);
+
+  detailsList.classList.add("list-group", "small");
+
+  targetTextListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1", "d-flex", "flex-row");
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  targetTextListItem.setAttribute(targetType === "url" ? "data-bmb-url-for" : "data-bmb-title-for", node.id);
+
+  targetTextParagraph.classList.add("text-start", "word-break-all", "mb-0");
+  targetTextParagraph.id = `${node.id}-${targetType}`;
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  targetTextParagraph.innerText = `${String.fromCharCode(160)}${targetType === "url" ? node.url : node.title}`;
+
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  targetTextBold.innerText = targetType === "url" ? "URL: " : "Title: ";
+
+  targetTextListItem.appendChild(targetTextBold);
+  targetTextListItem.appendChild(targetTextParagraph);
+
+  targetComplimentListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1", "d-flex", "flex-row");
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  targetComplimentListItem.setAttribute(targetType === "url" ? "data-bmb-title-for" : "data-bmb-url-for", node.id);
+
+  targetComplimentParagraph.classList.add("text-start", "word-break-all", "mb-0");
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  targetComplimentParagraph.id = `${node.id}-${targetType === "url" ? "title" : "url"}`;
+  targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${targetType === "url" ? node.title : node.url}`;
+
+  // TODO : a lot of these ternary expressions can be include together, so we only have to check the type once...
+  targetComplimentBold.innerText = targetType === "url" ? "Title: " : "URL: ";
+
+  targetComplimentListItem.appendChild(targetComplimentBold);
+  targetComplimentListItem.appendChild(targetComplimentParagraph);
+
+  bookmarkPathListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1");
+  bookmarkPathListItem.setAttribute("data-bmb-path-for", node.id);
+
+  bookmarkPathBold.innerText = "Folder: ";
+
+  pathSuffix.classList.add("text-start", "word-break-all", "m-0");
+  node.path.pop();
+  pathSuffix.innerText = `${node.path.join(` ${String.fromCharCode(8594)} `)}`;
+
+  /** Event Handlers */
+
   deleteButton.addEventListener("click", async () => {
     if (!elConfirmBookmarkDeletionCheckbox.checked) {
       try {
@@ -231,7 +316,7 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
           // The handler for the resulting event will take care of rerendering tree.
           await browser.bookmarks.remove(node.id);
         } catch (e) {
-          console.log("ERROR!", { error: e, node });
+          console.error("ERROR!", { error: e, node });
         } finally {
           confirmationModal.hide();
         }
@@ -240,21 +325,15 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
 
     if (confirmationModal) {
       confirmationModal.show();
+    } else {
+      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while creating confirmation-modal within findDuplicates->Delete Bookmark!`);
     }
   });
 
-  deleteIcon.classList.add("bi", "bi-trash");
-
-  deleteButton.appendChild(deleteIcon);
-
-  editButton.classList.add("btn", "btn-primary", "ms-auto", "btn-sm");
-  editButton.disabled = !!node.unmodifiable;
   editButton.addEventListener("click", () => {
     const editBookmarkModal = createEditBookmarkModal({
       url: node.url,
       title: node.title,
-      id: node.id,
-      targetType,
       onCancelButtonClick: () => {
         editBookmarkModal.hide();
       },
@@ -264,9 +343,77 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
           if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
             await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
             setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
-            // Rerun duplicate bookmark check to 'refresh' our duplicate results.
-            // TODO: could prob just edit the HTML directly without having to rerun an expensive task.
-            elFindDuplicatesButton.click();
+
+            // FIXME : THIS CAN BE IMPROVED A TON!!!
+            // TODO CLEAN THIS LOGIC UP - I JUST WANTED TO GET SOMETHING DOWN/WORKING
+            // FIXME : THIS CAN BE IMPROVED A TON!!!
+            /** Update the UI with edits to bookmark. */
+            // If the title was changed and we searched for duplicates by title
+            if (targetType === "title") {
+              if (originalTitle !== updatedTitle) {
+                // If there are only 2 items, it means we can remove this as a duplicate altogether
+                const elNodesUList = document.querySelector(`[data-bmb-duplicate-for="${node.title}"]`);
+                if (elNodesUList.childElementCount <= 2) {
+                  // Remove this entire "details" pane.
+                  const card = document.querySelector(`[data-bmb-card-for="${node.title}"]`);
+                  if (card) {
+                    // We need to get the parent of the card and remove it
+                    card.parentElement.remove();
+                    // Update main overall status label (at top of page) with count since we removed this set of duplicates.
+                    const numFoundDuplicatesOveralll = Math.max(0, parseInt(elFindDuplicatesStatusLabel.innerText.split(" ")[0]) - 1);
+                    elFindDuplicatesStatusLabel.innerText = `${numFoundDuplicatesOveralll} duplicate${numFoundDuplicatesOveralll > 1 ? "s" : ""} found`;
+                  } /* else {
+                    // If we fail to remove this, should we just rerun the expensive search as a fallbak?
+                  }
+                  */
+                } else {
+                  // If we made it here it means there are still duplicates for this Title even though we changed "this" bookmarks title.
+                  duplicateListItem.remove();
+                  // Update the label within this card with new count.
+                  const elCardTitle = document.querySelector(`[data-bmb-card-title-for="${originalTitle}"]`);
+                  const numFoundDuplicatesThisTitle = parseInt(elCardTitle.innerText.split(" ")[0]) - 1;
+                  elCardTitle.innerText = `${numFoundDuplicatesThisTitle} Duplicate Titles Found`;
+                  return;
+                }
+              }
+              // If we searched by title but the URL was edited, just update that in the display
+              if (originalUrl !== updatedUrl) {
+                // Since we searched by title but the url was changed, it means we need to target the compliment element.
+                targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${updatedUrl}`;
+              }
+            }
+            // TODO :See notes about sibling block eg.. `if (targetType === "title") ...`
+            if (targetType === "url") {
+              if (originalUrl !== updatedUrl) {
+                // If there are only 2 items, it means we can remove this as a duplicate altogether
+                const elNodesUList = document.querySelector(`[data-bmb-duplicate-for="${node.url}"]`);
+                if (elNodesUList.childElementCount <= 2) {
+                  // Remove this entire "details" pane.
+                  const card = document.querySelector(`[data-bmb-card-for="${node.url}"]`);
+                  if (card) {
+                    // We need to get the parent of the card and remove it
+                    card.parentElement.remove();
+                    // Update status label with count since we removed this set of duplicates.
+                    const numFoundDuplicates = Math.max(0, parseInt(elFindDuplicatesStatusLabel.innerText.split(" ")[0]) - 1);
+                    elFindDuplicatesStatusLabel.innerText = `${numFoundDuplicates} duplicate${numFoundDuplicates > 1 ? "s" : ""} found`;
+                  } /* else {
+                    // If we fail to remove this, should we just rerun the expensive search as a fallbak?
+                  }
+                  */
+                } else {
+                  // If we made it here it means there are still duplicates for this URL, even though "this" URL was changed.
+                  duplicateListItem.remove();
+                  // Update the label within this card with new count.
+                  const elCardTitle = document.querySelector(`[data-bmb-card-title-for="${originalUrl}"]`);
+                  const numFoundDuplicatesThisUrl = parseInt(elCardTitle.innerText.split(" ")[0]) - 1;
+                  elCardTitle.innerText = `${numFoundDuplicatesThisUrl} Duplicate URLs Found`;
+                  return;
+                }
+              }
+              if (originalTitle !== updatedTitle) {
+                targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${updatedTitle}`;
+              }
+            }
           }
         } catch (e) {
           setAlert({ alertMessage: "Error! Something went wrong!", alertType: "danger" });
@@ -277,44 +424,10 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
 
     if (editBookmarkModal) {
       editBookmarkModal.show();
+    } else {
+      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while creating edit-bookmark-modal! Within findDuplicates->Edit Bookmark`);
     }
   });
-
-  editIcon.classList.add("bi", "bi-pencil");
-
-  editButton.appendChild(editIcon);
-
-  detailsList.classList.add("list-group", "small");
-
-  targetTextListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1", "d-flex", "flex-row");
-
-  targetTextParagraph.classList.add("text-start", "word-break-all", "mb-0");
-  targetTextParagraph.id = `${node.id}-${targetType}`;
-  targetTextParagraph.innerText = `${String.fromCharCode(160)}${targetType === "url" ? node.url : node.title}`;
-
-  targetTextBold.innerText = targetType === "url" ? "URL: " : "Title: ";
-
-  targetTextListItem.appendChild(targetTextBold);
-  targetTextListItem.appendChild(targetTextParagraph);
-
-  targetComplimentListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1", "d-flex", "flex-row");
-
-  targetComplimentParagraph.classList.add("text-start", "word-break-all", "mb-0");
-  targetComplimentParagraph.id = `${node.id}-${targetType === "url" ? "title" : "url"}`;
-  targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${targetType === "url" ? node.title : node.url}`;
-
-  targetComplimentBold.innerText = targetType === "url" ? "Title: " : "URL: ";
-
-  targetComplimentListItem.appendChild(targetComplimentBold);
-  targetComplimentListItem.appendChild(targetComplimentParagraph);
-
-  bookmarkPathListItem.classList.add("list-group-item", "me-2", "border-0", "pt-0", "pb-1");
-
-  bookmarkPathBold.innerText = "Folder: ";
-
-  pathSuffix.classList.add("text-start", "word-break-all", "m-0");
-  node.path.pop();
-  pathSuffix.innerText = `${node.path.join(` ${String.fromCharCode(8594)} `)}`;
 
   pathSuffix.prepend(bookmarkPathBold);
   bookmarkPathListItem.appendChild(pathSuffix);

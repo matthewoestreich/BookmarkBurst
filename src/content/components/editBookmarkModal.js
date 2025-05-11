@@ -5,13 +5,6 @@ import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
 import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
 import "../index.css";
 
-const elEditBookmarkModal = document.getElementById("modal-edit-bookmark");
-const elEditBookmarkModalAlertMessage = document.getElementById("modal-edit-bookmark-alert");
-const elEditBookmarkModalSaveButton = document.getElementById("modal-edit-bookmark-save-button");
-const elEditBookmarkModalCancelButton = document.getElementById("modal-edit-bookmark-close-button");
-const elEditBookmarkModalUrlInput = document.getElementById("modal-edit-bookmark-url");
-const elEditBookmarkModalTitleInput = document.getElementById("modal-edit-bookmark-title");
-
 /**
  * @typedef {"danger" | "success"} AlertType
  * @typedef {{ alertType: AlertType, alertMessage: string }} SetAlertProperties
@@ -32,6 +25,13 @@ const elEditBookmarkModalTitleInput = document.getElementById("modal-edit-bookma
  *  onCancelButtonClick?: (callbackProps: EditBookmarkModalCallbackProperties) => any;
  * }} CreateEditBookmarkModalProperties
  */
+
+const elEditBookmarkModal = document.getElementById("modal-edit-bookmark");
+const elEditBookmarkModalAlertMessage = document.getElementById("modal-edit-bookmark-alert");
+const elEditBookmarkModalSaveButton = document.getElementById("modal-edit-bookmark-save-button");
+const elEditBookmarkModalCancelButton = document.getElementById("modal-edit-bookmark-close-button");
+const elEditBookmarkModalUrlInput = document.getElementById("modal-edit-bookmark-url");
+const elEditBookmarkModalTitleInput = document.getElementById("modal-edit-bookmark-title");
 
 /**
  * Reset modal form

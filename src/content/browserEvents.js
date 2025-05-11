@@ -1,12 +1,12 @@
 import browser from "webextension-polyfill";
 
-const elManageTab = document.getElementById("menu-tab-manage-bookmarks");
-const elDetectDuplicatesTab = document.getElementById("menu-tab-detect-duplicates");
-const elFindBrokenTab = document.getElementById("menu-tab-detect-dead-bookmarks");
-
 /**
  * @typedef {"manage" | "duplicate" | "broken" | "none"} BookmarkBurstTabs
  */
+
+const elManageTab = document.getElementById("menu-tab-manage-bookmarks");
+const elDetectDuplicatesTab = document.getElementById("menu-tab-detect-duplicates");
+const elFindBrokenTab = document.getElementById("menu-tab-detect-dead-bookmarks");
 
 /**
  * BROWSER EVENTS

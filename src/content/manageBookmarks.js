@@ -1,17 +1,3 @@
-import browser from "webextension-polyfill";
-import * as bootstrap from "bootstrap";
-
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.min.css";
-import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
-import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
-import "./index.css";
-
-import { sortRawNodes } from "./utils.js";
-import { createLoadingSpinner } from "./components/loadingSpinner";
-import { createEditBookmarkModal } from "./components/editBookmarkModal";
-import { createConfirmationModal } from "./components/confirmationModal";
-
 /**
  * Documenting custom data attributes for Folder and Bookmark HTML elements.
  *
@@ -47,6 +33,19 @@ import { createConfirmationModal } from "./components/confirmationModal";
  *      `const parent = document.querySelector("#node-abc123");`
  *      `const childMountEl = parent.querySelector(`#children-${parent.dataset.bmbId}`);`
  */
+import browser from "webextension-polyfill";
+import * as bootstrap from "bootstrap";
+
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.min.css";
+import "bootstrap-icons/font/fonts/bootstrap-icons.woff";
+import "bootstrap-icons/font/fonts/bootstrap-icons.woff2";
+import "./index.css";
+
+import { sortRawNodes } from "./utils.js";
+import { createLoadingSpinner } from "./components/loadingSpinner";
+import { createEditBookmarkModal } from "./components/editBookmarkModal";
+import { createConfirmationModal } from "./components/confirmationModal";
 
 /**
  * @typedef {"Folders First" | "Date Added Newest First" | "Date Added Newest Last" | "Alphabetical"} SortNodesBy
@@ -292,66 +291,11 @@ function generateBookmarkHTML(node) {
   actionButtonEdit.classList.add("btn", "btn-sm", "btn-primary", "p-0");
   actionButtonEdit.style.height = "25px";
   actionButtonEdit.style.width = "25px";
-  actionButtonEdit.addEventListener("click", () => {
-    const editBookmarkModal = createEditBookmarkModal({
-      url: node.url,
-      title: node.title,
-      onCancelButtonClick: () => {
-        editBookmarkModal.hide();
-      },
-      onSaveButtonClick: async ({ setAlert, originalTitle, originalUrl, updatedUrl, updatedTitle }) => {
-        try {
-          // If any changes were made we need to update the bookmark, as well as our results that are being displayed.
-          if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
-            const updatedNode = await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
-            setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
-            mainBookmarkLItem.replaceWith(generateBookmarkHTML(updatedNode));
-          }
-        } catch (e) {
-          setAlert({ alertMessage: "Error! Something went wrong!", alertType: "danger" });
-          console.error(`[BookmarkBlast][edit-bookmark-modal-save] Error saving bookmark!`, e);
-        }
-      },
-    });
-
-    if (editBookmarkModal) {
-      editBookmarkModal.show();
-    } else {
-      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while trying to display edit-bookmark-modal!`);
-    }
-  });
 
   actionButtonDeleteIcon.classList.add("bi", "bi-trash");
   actionButtonDelete.classList.add("btn", "btn-sm", "btn-danger", "p-0");
   actionButtonDelete.style.height = "25px";
   actionButtonDelete.style.width = "25px";
-  actionButtonDelete.addEventListener("click", () => {
-    const confirmationModal = createConfirmationModal({
-      title: "Confirmation",
-      okButtonText: "Yes",
-      closeButtonText: "No",
-      message: "Are you sure you want to delete this bookmark?\n\nThis action cannot be undone!",
-      onCancelButtonClick: (e) => {
-        confirmationModal.hide();
-      },
-      onOkButtonClick: async (e) => {
-        try {
-          await browser.bookmarks.remove(node.id);
-          mainBookmarkLItem.remove();
-        } catch (e) {
-          console.log("[BookmarkBurst][manage][ERROR] Something went wrong while attempting to delete a bookmark!", { error: e, node });
-        } finally {
-          confirmationModal.hide();
-        }
-      },
-    });
-
-    if (confirmationModal) {
-      confirmationModal.show();
-    } else {
-      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while trying to display confirmation-modal to delete bookmark!`);
-    }
-  });
 
   actionButtonEdit.appendChild(actionButtonEditIcon);
   actionButtonDelete.appendChild(actionButtonDeleteIcon);
@@ -397,6 +341,63 @@ function generateBookmarkHTML(node) {
   spanToggleExpand.textContent = String.fromCharCode(160);
 
   /** Event Handlers */
+
+  actionButtonEdit.addEventListener("click", () => {
+    const editBookmarkModal = createEditBookmarkModal({
+      url: node.url,
+      title: node.title,
+      onCancelButtonClick: () => {
+        editBookmarkModal.hide();
+      },
+      onSaveButtonClick: async ({ setAlert, originalTitle, originalUrl, updatedUrl, updatedTitle }) => {
+        try {
+          // If any changes were made we need to update the bookmark, as well as our results that are being displayed.
+          if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
+            const updatedNode = await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
+            setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
+            mainBookmarkLItem.replaceWith(generateBookmarkHTML(updatedNode));
+          }
+        } catch (e) {
+          setAlert({ alertMessage: "Error! Something went wrong!", alertType: "danger" });
+          console.error(`[BookmarkBlast][edit-bookmark-modal-save] Error saving bookmark!`, e);
+        }
+      },
+    });
+
+    if (editBookmarkModal) {
+      editBookmarkModal.show();
+    } else {
+      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while trying to display edit-bookmark-modal!`);
+    }
+  });
+
+  actionButtonDelete.addEventListener("click", () => {
+    const confirmationModal = createConfirmationModal({
+      title: "Confirmation",
+      okButtonText: "Yes",
+      closeButtonText: "No",
+      message: "Are you sure you want to delete this bookmark?\n\nThis action cannot be undone!",
+      onCancelButtonClick: (e) => {
+        confirmationModal.hide();
+      },
+      onOkButtonClick: async (e) => {
+        try {
+          await browser.bookmarks.remove(node.id);
+          mainBookmarkLItem.remove();
+        } catch (e) {
+          console.error("[BookmarkBurst][manage][ERROR] Something went wrong while attempting to delete a bookmark!", { error: e, node });
+        } finally {
+          confirmationModal.hide();
+        }
+      },
+    });
+
+    if (confirmationModal) {
+      confirmationModal.show();
+    } else {
+      console.error(`[BookmarkBurst][manage][ERROR] Something went wrong while trying to display confirmation-modal to delete bookmark!`);
+    }
+  });
 
   divBookmarkRootContainer.addEventListener("click", function (event) {
     event.stopPropagation();
