@@ -207,17 +207,13 @@ async function handleNodeCollapseOrExpand(node = null, childUList = null) {
       childUList.classList.remove("show");
       childUList.setAttribute("data-bmb-expanded", 0);
       childUList.replaceChildren();
-      if (spanAction) {
-        spanAction.setAttribute("data-bmb-folder-icon-expanded", 0);
-      }
+      spanAction?.setAttribute("data-bmb-folder-icon-expanded", 0);
     } else {
       // Need to expand
       childUList.appendChild(createLoadingSpinner());
       childUList.classList.add("show");
       childUList.setAttribute("data-bmb-expanded", 1);
-      if (spanAction) {
-        spanAction.setAttribute("data-bmb-folder-icon-expanded", 1);
-      }
+      spanAction?.setAttribute("data-bmb-folder-icon-expanded", 1);
       // Wait for loading spinner to show first.
       await waitForNextFrame();
       renderRawNodes(node.children, childUList);
@@ -771,7 +767,7 @@ function scoreSearchMatch(query, target, targetScore) {
   let score = 0;
   const normQuery = normalizeSearchString(query);
   const normTarget = normalizeSearchString(target);
-  if (normTarget === normQuery) {
+  if (normTarget === normQuery || normTarget.includes(normQuery)) {
     // If we have an exact match I'd say that qualifies...
     return true;
   } else if (normTarget.startsWith(normQuery)) {
