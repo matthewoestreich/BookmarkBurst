@@ -19,7 +19,7 @@ export class BookmarkTreeNodeExtended {
 
   /**
    * BookmarkNode is our internal symbolic representation of the builtin type  `bookmarks.BookmarkTreeNode`.
-   * @param {bookmarks.BookmarkTreeNode} node
+   * @param {browser.Bookmarks.BookmarkTreeNode} node
    * @param {boolean} checked
    * @param {boolean} collapsed
    * @param {BookmarkNode[]} children
