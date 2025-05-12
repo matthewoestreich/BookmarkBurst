@@ -21,6 +21,43 @@
  * label?: {string} optional - is not displayed visually
  * color?: {BootstrapColors} optional, "primary" by default
  * showPercentageLabel?: {boolean} optional, false by default
+ *
+ * Usage:
+ * ```
+ *  const progressbar = createProgressBar({
+ *    initialPercentage: 0,
+ *    label: "my-progress-bar",
+ *    color: "success",
+ *    showPercentageLabel: true,
+ *  });
+ *
+ *  // Manipulate the backing HTML element..
+ *  progressbar.element.id = "foo-bar-baz";
+ *  // etc..
+ *
+ *  // Add progress bar to DOM
+ *  someElement.appendChild(progressbar.element);
+ *
+ *  // Show progress bar
+ *  progressbar.show();
+ *
+ *  // Update progress bar
+ *  for (let i = 1; i <= 10; i++) {
+ *    await sleepMilliseconds(1000); // Pretend we are doing something...
+ *    progressbar.updatePercentage(i * 10);
+ *  }
+ *
+ *  // Hide progress bar if you want...
+ *  progressbar.hide();
+ *
+ *  // Show again if you want...
+ *  progressbar.updatePercentage(0);
+ *  progressbar.show();
+ *
+ *  // Destroy DOM element, can't show after this..
+ *  progressbar.dispose();
+ * ```
+ *
  * @param {ProgressBarProperties} props
  * @returns {BookmarkBurstProgressBar}
  */
@@ -47,7 +84,7 @@ export function createProgressBar({ initialPercentage, label, color, showPercent
 
   const rootProgressBarAttributes = {
     role: "progressbar",
-    "aria-label": label || "progress-bar________",
+    "aria-label": label || "________bmb-progress-bar________",
     "aria-valuenow": initialPercentage,
     "aria-valuemin": "0",
     "aria-valuemax": "100",

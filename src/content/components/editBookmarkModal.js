@@ -72,9 +72,9 @@ export function createEditBookmarkModal(props) {
 
   // On Cancel button click handler
   function handleCancel(event) {
-    const updatedUrl = elEditBookmarkModalUrlInput.value;
-    const updatedTitle = elEditBookmarkModalTitleInput.value;
     if (onCancelButtonClick) {
+      const updatedUrl = elEditBookmarkModalUrlInput.value;
+      const updatedTitle = elEditBookmarkModalTitleInput.value;
       onCancelButtonClick({ event, originalTitle, originalUrl, updatedUrl, updatedTitle, setAlert });
     }
     clearModalData();

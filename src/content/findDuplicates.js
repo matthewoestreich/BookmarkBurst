@@ -133,7 +133,7 @@ function sortRawNodesRecursively(nodes, sortBy) {
 }
 
 /**
- *
+ *  Find duplicate bookmarks by specific TargetType
  * @param {browser.Bookmarks.BookmarkTreeNode[]} nodes
  * @param {TargetType} findBy
  */
@@ -404,8 +404,8 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
             return;
           }
 
-          // If we made it here it means there are still duplicates for this target-type even though we changed "this" bookmarks target-type.
-          // For example, if we have 3 duplicates, all with the same Title (Title is the target-type), and only one of those titles was changed, we
+          // If we made it here it means there are still duplicates for this target-type even though we edited "this" bookmarks target-type.
+          // For example, if we have 3 duplicates, all with the same Title (Title is the target-type), and only one of those titles was edited, we
           // still have 2 bookmarks with the same title. Meaning, duplicates still exist for that Title.
           // So we only need to remove "this" bookmark from being a duplicate, not the overall group of duplicates (since 2 still exist, given the example).
           duplicateListItem.remove();

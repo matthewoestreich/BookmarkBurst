@@ -12,6 +12,7 @@ const elFindBrokenTab = document.getElementById("menu-tab-detect-dead-bookmarks"
  * BROWSER EVENTS
  */
 
+// When a bookmark is removed.
 browser.bookmarks.onRemoved.addListener(async (id, removeInfo) => {
   const selectedTab = getSelectedTab();
 

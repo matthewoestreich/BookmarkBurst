@@ -1,3 +1,8 @@
+/**
+ *
+ * This file contains methods that are used within more than one other file.
+ *
+ */
 import browser from "webextension-polyfill";
 import * as bootstrap from "bootstrap";
 
