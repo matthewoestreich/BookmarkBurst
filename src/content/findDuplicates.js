@@ -11,9 +11,9 @@
  *    So we can easily find the element that is displaying the path for "this" BookmarkTreeNode. The value of this attributes is the node ID.
  *
  *  "data-bmb-duplicate-for"
- *    The list group that holds each duplicates details. This is the details nested within the main card for this set of duplicates.
+ *    The list group that holds each duplicates details. This is the details nested within the main card for "this" set of duplicates.
  *    The value of this attribute will either be the literal URL or Title.
- *    for "this" set of duplicates. We use this to query for how many duplicate bookmarks there are.
+ *    We use this to query for how many duplicate bookmarks there are.
  *
  *  "data-bmb-card-for"
  *    The main card that holds all of the details for each duplicate node. This is the overall container that lists each duplicate.
