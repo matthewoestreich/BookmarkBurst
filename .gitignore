@@ -2,6 +2,7 @@
 fake_bookmarks_*.*
 FIREFOX.md
 chrome_packed
+.vscode
 
 # Logs
 logs
