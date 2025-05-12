@@ -294,6 +294,7 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
 
   /** Event Handlers */
 
+  // Delete a bookmark.
   deleteButton.addEventListener("click", async () => {
     if (!elConfirmBookmarkDeletionCheckbox.checked) {
       try {
@@ -330,6 +331,7 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
     }
   });
 
+  // Edit a bookmark
   editButton.addEventListener("click", () => {
     const editBookmarkModal = createEditBookmarkModal({
       url: node.url,
@@ -338,83 +340,79 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
         editBookmarkModal.hide();
       },
       onSaveButtonClick: async ({ setAlert, originalTitle, originalUrl, updatedUrl, updatedTitle }) => {
-        try {
-          // If any changes were made we need to update the bookmark, as well as our results that are being displayed.
-          if (originalUrl !== updatedUrl || originalTitle !== updatedTitle) {
-            await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
-            setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
+        // Neither title or url changed
+        if (originalTitle === updatedTitle && originalUrl === updatedUrl) {
+          return;
+        }
 
-            // FIXME : THIS CAN BE IMPROVED A TON!!!
-            // TODO CLEAN THIS LOGIC UP - I JUST WANTED TO GET SOMETHING DOWN/WORKING
-            // FIXME : THIS CAN BE IMPROVED A TON!!!
-            /** Update the UI with edits to bookmark. */
-            // If the title was changed and we searched for duplicates by title
-            if (targetType === "title") {
-              if (originalTitle !== updatedTitle) {
-                // If there are only 2 items, it means we can remove this as a duplicate altogether
-                const elNodesUList = document.querySelector(`[data-bmb-duplicate-for="${node.title}"]`);
-                if (elNodesUList.childElementCount <= 2) {
-                  // Remove this entire "details" pane.
-                  const card = document.querySelector(`[data-bmb-card-for="${node.title}"]`);
-                  if (card) {
-                    // We need to get the parent of the card and remove it
-                    card.parentElement.remove();
-                    // Update main overall status label (at top of page) with count since we removed this set of duplicates.
-                    const numFoundDuplicatesOveralll = Math.max(0, parseInt(elFindDuplicatesStatusLabel.innerText.split(" ")[0]) - 1);
-                    elFindDuplicatesStatusLabel.innerText = `${numFoundDuplicatesOveralll} duplicate${numFoundDuplicatesOveralll > 1 ? "s" : ""} found`;
-                  } /* else {
-                    // If we fail to remove this, should we just rerun the expensive search as a fallbak?
-                  }
-                  */
-                } else {
-                  // If we made it here it means there are still duplicates for this Title even though we changed "this" bookmarks title.
-                  duplicateListItem.remove();
-                  // Update the label within this card with new count.
-                  const elCardTitle = document.querySelector(`[data-bmb-card-title-for="${originalTitle}"]`);
-                  const numFoundDuplicatesThisTitle = parseInt(elCardTitle.innerText.split(" ")[0]) - 1;
-                  elCardTitle.innerText = `${numFoundDuplicatesThisTitle} Duplicate Titles Found`;
-                  return;
-                }
-              }
-              // If we searched by title but the URL was edited, just update that in the display
-              if (originalUrl !== updatedUrl) {
-                // Since we searched by title but the url was changed, it means we need to target the compliment element.
-                targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${updatedUrl}`;
-              }
-            }
-            // TODO :See notes about sibling block eg.. `if (targetType === "title") ...`
-            if (targetType === "url") {
-              if (originalUrl !== updatedUrl) {
-                // If there are only 2 items, it means we can remove this as a duplicate altogether
-                const elNodesUList = document.querySelector(`[data-bmb-duplicate-for="${node.url}"]`);
-                if (elNodesUList.childElementCount <= 2) {
-                  // Remove this entire "details" pane.
-                  const card = document.querySelector(`[data-bmb-card-for="${node.url}"]`);
-                  if (card) {
-                    // We need to get the parent of the card and remove it
-                    card.parentElement.remove();
-                    // Update status label with count since we removed this set of duplicates.
-                    const numFoundDuplicates = Math.max(0, parseInt(elFindDuplicatesStatusLabel.innerText.split(" ")[0]) - 1);
-                    elFindDuplicatesStatusLabel.innerText = `${numFoundDuplicates} duplicate${numFoundDuplicates > 1 ? "s" : ""} found`;
-                  } /* else {
-                    // If we fail to remove this, should we just rerun the expensive search as a fallbak?
-                  }
-                  */
-                } else {
-                  // If we made it here it means there are still duplicates for this URL, even though "this" URL was changed.
-                  duplicateListItem.remove();
-                  // Update the label within this card with new count.
-                  const elCardTitle = document.querySelector(`[data-bmb-card-title-for="${originalUrl}"]`);
-                  const numFoundDuplicatesThisUrl = parseInt(elCardTitle.innerText.split(" ")[0]) - 1;
-                  elCardTitle.innerText = `${numFoundDuplicatesThisUrl} Duplicate URLs Found`;
-                  return;
-                }
-              }
-              if (originalTitle !== updatedTitle) {
-                targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${updatedTitle}`;
-              }
-            }
+        try {
+          // We know something has changed so we can update the bookmark.
+          await browser.bookmarks.update(node.id, { url: updatedUrl, title: updatedTitle });
+          setAlert({ alertMessage: "Successfully edited bookmark!", alertType: "success" });
+
+          // The remaining code in this block updates the DOM with our changes.. As opposed to just re-running the expensive
+          // task of finding all duplicates from scratch, which would also render the duplicates.
+
+          // Use a config object to help us stay D.R.Y.
+          const targets = {
+            url: {
+              isChanged: originalUrl !== updatedUrl,
+              nodesUListSelector: `[data-bmb-duplicate-for="${node.url}"]`,
+              cardSelector: `[data-bmb-card-for="${node.url}"]`,
+              cardTitleSelector: `[data-bmb-card-title-for="${originalUrl}"]`,
+              updated: updatedUrl,
+              label: "URL",
+            },
+            title: {
+              isChanged: originalTitle !== updatedTitle,
+              nodesUListSelector: `[data-bmb-duplicate-for="${node.title}"]`,
+              cardSelector: `[data-bmb-card-for="${node.title}"]`,
+              cardTitleSelector: `[data-bmb-card-title-for="${originalTitle}"]`,
+              updated: updatedTitle,
+              label: "Title",
+            },
+          };
+
+          const target = targets[targetType];
+          const opposite = targets[targetType === "title" ? "url" : "title"];
+
+          // For example, if we are targeting by URL and the Title changed (or vice versa). AKA if the opposite of the target changed..
+          if (opposite.isChanged) {
+            // We need to modify the compliment element (aka the opposite of the target).
+            targetComplimentParagraph.innerText = `${String.fromCharCode(160)}${opposite.updated}`;
           }
+          // If the target isn't changed we can just return early
+          if (!target.isChanged) {
+            return;
+          }
+
+          // Get the element that is holding our duplicate bookmarks.
+          const elNodesUList = document.querySelector(target.nodesUListSelector);
+          // If there are only <=2 items, it means we can remove this as a duplicate altogether.
+          if (elNodesUList && elNodesUList.childElementCount <= 2) {
+            // Remove this entire "details" card.
+            const card = document.querySelector(target.cardSelector);
+            if (card) {
+              // We need to get the parent of the card and remove it
+              card.parentElement.remove();
+              // Update main overall status label (at top of page) with count since we removed this set of duplicates.
+              const numDuplicates = parseInt(elFindDuplicatesStatusLabel.innerText.split(" ")[0]) - 1;
+              const pluralOrSingular = numDuplicates > 1 ? "duplicates" : "duplicate";
+              elFindDuplicatesStatusLabel.innerText = `${numDuplicates} ${pluralOrSingular} found`;
+            }
+            // We can return here since there is no need to check for individual bookmarks (since we just removed the entire card).
+            return;
+          }
+
+          // If we made it here it means there are still duplicates for this target-type even though we changed "this" bookmarks target-type.
+          // For example, if we have 3 duplicates, all with the same Title (Title is the target-type), and only one of those titles was changed, we
+          // still have 2 bookmarks with the same title. Meaning, duplicates still exist for that Title.
+          // So we only need to remove "this" bookmark from being a duplicate, not the overall group of duplicates (since 2 still exist, given the example).
+          duplicateListItem.remove();
+          // Update the label within this card with new count.
+          const elCardTitle = document.querySelector(target.cardTitleSelector);
+          const numTargetDuplicates = parseInt(elCardTitle.innerText.split(" ")[0]) - 1;
+          elCardTitle.innerText = `${numTargetDuplicates} Duplicate ${target.label}s Found`;
         } catch (e) {
           setAlert({ alertMessage: "Error! Something went wrong!", alertType: "danger" });
           console.error(`[BookmarkBlast][edit-bookmark-modal-save] Error saving bookmark!`, e);
@@ -443,6 +441,5 @@ function generateDuplicateBookmarkDetailsHTML(node, targetType) {
   duplicateListItem.appendChild(detailsList);
   duplicateListItem.appendChild(editButton);
   duplicateListItem.appendChild(deleteButton);
-
   return duplicateListItem;
 }
